@@ -1,9 +1,12 @@
 import numpy as np
 from random import sample
 import gensim 
-from itertools import combinations
+import itertools
+import embeddings
 import embeddings.word2vec
 import embeddings.glove
+import embeddings.fasttext
+import embeddings.bert
 
 # model = gensim.models.KeyedVectors.load_word2vec_format("GoogleNews_vectors.bin", binary=True)
 word2vec = embeddings.word2vec.Word2Vec()
@@ -63,7 +66,7 @@ class Agent:
             
     def clue_w2v_pairs(self):
         best = ("", 0) 
-        pairs = combinations(blue_words, 2)
+        pairs = itertools.combinations(blue_words, 2)
         for p in pairs:
             candidate = self.model.most_similar(positive=list(p), restrict_vocab=100000, topn=1)[0]
             if candidate[1] >= best[1]:
@@ -78,6 +81,30 @@ class Agent:
 
     def human_guess(self):
         return input()
+    
+    def guess(self, guessable_words, clue, model):
+        """Naive nearest neighbor guesser"""
+        # words = list of words to guess from
+        # clue = (clue word, number of targets)
+        # model
+        word_scores = []
+        for word in guessable_words:
+            word_scored.append(model.get_word_similarity(word, clue))
+        
+        # indices of words in descending order of score
+        best_word_ixd = np.flip(np.argsort(word_scores))
+
+        return guessable_words[best_word_ixd[:clue[1]]]
+
+    def clue_thresholds(self, assassin, red_words, blue_words, bystanders, model):
+        pass
+
+    def combined_scorer(self, assassin, red_words, blue_words, bystanders, model):
+        
+
+
+
+
 
 
 spymaster = Agent(assassin, red_words, blue_words, bystanders, word2vec)

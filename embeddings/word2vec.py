@@ -5,8 +5,6 @@ from gensim.models import KeyedVectors
 class Word2Vec(object):
 
 	def __init__(self, configuration=None):
-
-
 		# Initialize variables
 		self.configuration = configuration
 		self.word2vec_model = KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin', binary=True)
