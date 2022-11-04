@@ -1,7 +1,10 @@
 import numpy as np
 from random import sample
+import gensim 
 
-with open("codewords.txt") as f: 
+model = gensim.models.KeyedVectors.load_word2vec_format("GoogleNews_vectors.bin", binary=True)
+
+with open("codewords_simplified.txt") as f: 
     codewords = [x.strip() for x in f.readlines()]
 
 with open("cm_wordlist.txt") as f: 
@@ -19,20 +22,21 @@ done = False
 turns = 0 
 
 class Agent:
-    def __init__(self, assassin, red_words, blue_words, bystanders):
+    def __init__(self, assassin, red_words, blue_words, bystanders, model):
         self.board_state = (assassin, red_words, blue_words, bystanders)
         self.previous_guesses = []
         self.ally_words_remaining = 8
 
     def clue(self):
-        return sample(clue_words, k=1)[0]
+        return model.most_similar(positive=blue_words, negative=red_words, restrict_vocab=10000, topn=1)[0][0]
 
     def human_guess(self):
         return input()
 
 
-spymaster = Agent(assassin, red_words, blue_words, bystanders)
-guesser = Agent(assassin, red_words, blue_words, bystanders)
+spymaster = Agent(assassin, red_words, blue_words, bystanders, model)
+guesser = Agent(assassin, red_words, blue_words, bystanders, model)
+
 
 while not done: 
     print("Clue: " + spymaster.clue())
