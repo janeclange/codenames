@@ -2,14 +2,22 @@ import numpy as np
 from random import sample
 import gensim 
 from itertools import combinations
+import embeddings.word2vec
+import embeddings.glove
 
-model = gensim.models.KeyedVectors.load_word2vec_format("GoogleNews_vectors.bin", binary=True)
+# model = gensim.models.KeyedVectors.load_word2vec_format("GoogleNews_vectors.bin", binary=True)
+word2vec = embeddings.word2vec.Word2Vec()
+glove = embeddings.glove.Glove()
+fasttext = embeddings.fasttext.FastText()
+bert = embeddings.bert.Bert()
 
 with open("codewords_simplified.txt") as f: 
     codewords = [x.strip() for x in f.readlines()]
 
 with open("cm_wordlist.txt") as f: 
     clue_words = [x.strip() for x in f.readlines()]
+
+clue_sample = sample(clue_words, 1000)
 
 board_words = sample(codewords, k=25)
 assassin = board_words[0]
@@ -27,16 +35,37 @@ class Agent:
         self.assassin, self.red_words, self.blue_words, self.bystanders = assassin, red_words, blue_words, bystanders
         self.previous_guesses = []
         self.ally_words_remaining = 8
+        self.model = model
 
     def clue_by_ranking(self):
-        candidates = model[0:100000]
-        print (candidates[0])
+        rankings = {}
+        for w in clue_sample:
+            similarities = []
+            for v in board_words:
+                similarities.append(word2vec.get_word_similarity(w,v), v)
+            similarities.sort()
+            rankings[w] = similarities
 
+        max_targets = 0
+        best_clue = ""
+        for w in clue_sample:
+            n = 0
+            for (s,v) in rankings[w]:
+                if v in self.blue_words:
+                    n += 1
+                else:
+                    break
+            if n > max_targets:
+                best_clue = w 
+                max_targets = n
+        return best_clue 
+        
+            
     def clue_w2v_pairs(self):
         best = ("", 0) 
         pairs = combinations(blue_words, 2)
         for p in pairs:
-            candidate = model.most_similar(positive=list(p), restrict_vocab=100000, topn=1)[0]
+            candidate = self.model.most_similar(positive=list(p), restrict_vocab=100000, topn=1)[0]
             if candidate[1] >= best[1]:
                 best = (candidate[0] + str(p), candidate[1])
         return best[0] 
@@ -51,8 +80,8 @@ class Agent:
         return input()
 
 
-spymaster = Agent(assassin, red_words, blue_words, bystanders, model)
-guesser = Agent(assassin, red_words, blue_words, bystanders, model)
+spymaster = Agent(assassin, red_words, blue_words, bystanders, word2vec)
+guesser = Agent(assassin, red_words, blue_words, bystanders, word2vec)
 
 
 while not done: 
