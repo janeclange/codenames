@@ -28,10 +28,11 @@ class Agent:
         self.previous_guesses = []
         self.ally_words_remaining = 8
 
-    def clue(self):
-        for w in self.previous_guesses:
-            if w in self.blue_words:
-                self.blue_words.remove(w)
+    def clue_by_ranking(self):
+        candidates = model[0:100000]
+        print (candidates[0])
+
+    def clue_w2v_pairs(self):
         best = ("", 0) 
         pairs = combinations(blue_words, 2)
         for p in pairs:
@@ -39,6 +40,12 @@ class Agent:
             if candidate[1] >= best[1]:
                 best = (candidate[0] + str(p), candidate[1])
         return best[0] 
+
+    def clue(self):
+        for w in self.previous_guesses:
+            if w in self.blue_words:
+                self.blue_words.remove(w)
+        return self.clue_by_ranking()
 
     def human_guess(self):
         return input()
