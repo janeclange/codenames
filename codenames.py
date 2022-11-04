@@ -1,6 +1,7 @@
 import numpy as np
 from random import sample
 import gensim 
+from itertools import combinations
 
 model = gensim.models.KeyedVectors.load_word2vec_format("GoogleNews_vectors.bin", binary=True)
 
@@ -23,12 +24,21 @@ turns = 0
 
 class Agent:
     def __init__(self, assassin, red_words, blue_words, bystanders, model):
-        self.board_state = (assassin, red_words, blue_words, bystanders)
+        self.assassin, self.red_words, self.blue_words, self.bystanders = assassin, red_words, blue_words, bystanders
         self.previous_guesses = []
         self.ally_words_remaining = 8
 
     def clue(self):
-        return model.most_similar(positive=blue_words, negative=red_words, restrict_vocab=10000, topn=1)[0][0]
+        for w in self.previous_guesses:
+            if w in self.blue_words:
+                self.blue_words.remove(w)
+        best = ("", 0) 
+        pairs = combinations(blue_words, 2)
+        for p in pairs:
+            candidate = model.most_similar(positive=list(p), restrict_vocab=100000, topn=1)[0]
+            if candidate[1] >= best[1]:
+                best = (candidate[0] + str(p), candidate[1])
+        return best[0] 
 
     def human_guess(self):
         return input()
