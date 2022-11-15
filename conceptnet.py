@@ -1,5 +1,6 @@
 import tqdm
 import pickle
+import numberbatch_guesser
 class ConceptNetGraph:
     def __init__(self):
         self.edges = {} #dictionary of nodes -> list of edges
@@ -68,4 +69,7 @@ if __name__=="__main__":
             for w2 in codewords:
                 w2 = w2.replace(" ","_").lower()
                 if w!=w2:
-                    print((w,w2),g.get_two_word_clue(w,w2))
+                    #print((w,w2),g.get_two_word_clue(w,w2))
+                    clues = g.get_two_word_clue(w,w2)
+                    guesser = numberbatch_guesser.Guesser() 
+                    guesser.score_clues([w,w2],clues)
