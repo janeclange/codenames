@@ -28,7 +28,9 @@ class Guesser:
             for line in file:
                 if line.rstrip().isalpha():
                     lines.append(line.rstrip().lower())
-        common_words = np.sort(np.unique(np.array(lines)))
+        with open("codewords_simplified.txt") as file:
+            lines2 = [s.strip().lower() for s in file.readlines()]
+        common_words = np.sort(np.unique(np.array(lines+lines2)))
 
         valid_inds = []
         valid_words = []
@@ -43,6 +45,12 @@ class Guesser:
         valid_inds = np.array(valid_inds)
         self.words = np.array(valid_words)
         self.embedding = vecs[valid_inds].astype(np.int64)
+
+    def filter_valid_words(self, ws):
+        inds = np.searchsorted(self.words, ws)
+        #print(list(zip(ws,inds)))
+        result = [word for word,ind in zip(ws,inds) if ind<len(self.words) and word==self.words[ind]]
+        return result
 
     def find_vecs(self, ws):
         inds = np.searchsorted(self.words, ws)
@@ -78,3 +86,6 @@ if __name__=="__main__":
 
     print('what would I clue for "bat" and "eye", in descending order of preference?')
     print(g.score_clues(['bat', 'eye'], ['blind', 'blink', 'pupil', 'mammal']))
+
+    #print(g.score_clues(['africa', 'agent'],['tripoli', 'antimalarial', 'patient', 'service', 'chad', 'transport', 'metaphosphoric_acid', 'ant', 'europe', 'antpecker', 'bishop', 'polish', 'continent', 'snake', 'seven', 'global_south', 'rider', 'double', 'cement', 'gun', 'abc', 'poison', 'bond', 'scour', 'horn', 'vehicle', 'guy', 'name', 'marabou', 'antarctica', 'cat', 'gnu', 'official', 'avail', 'shari', 'political', 'hypo', 'malaria', 'act', 'central_african_republic']))
+    print(g.filter_valid_words(['tripoli', 'antimalarial', 'patient', 'service', 'chad', 'transport', 'metaphosphoric_acid', 'ant', 'europe', 'antpecker', 'bishop', 'polish', 'continent', 'snake', 'seven', 'global_south', 'rider', 'double', 'cement', 'gun', 'abc', 'poison', 'bond', 'scour', 'horn', 'vehicle', 'guy', 'name', 'marabou', 'antarctica', 'cat', 'gnu', 'official', 'avail', 'shari', 'political', 'hypo', 'malaria', 'act', 'central_african_republic']))

@@ -59,6 +59,8 @@ if __name__=="__main__":
     #g = ConceptNetGraph()
     #g.parse_graph()
     g = ConceptNetGraph.load_graph()
+    guesser = numberbatch_guesser.Guesser()
+    guesser.load_data()
     with open("out.txt","w",encoding="utf8") as f:
         f.write(str(g.get_distance_k_neighbors("keyboard",2)))
 
@@ -71,5 +73,11 @@ if __name__=="__main__":
                 if w!=w2:
                     #print((w,w2),g.get_two_word_clue(w,w2))
                     clues = g.get_two_word_clue(w,w2)
-                    guesser = numberbatch_guesser.Guesser() 
-                    guesser.score_clues([w,w2],clues)
+                    #print([w,w2])
+                    #print(clues)
+                    clues = guesser.filter_valid_words(clues)
+                    if clues:
+                        scored_clues = guesser.score_clues([w,w2],clues)
+                        print((w,w2), scored_clues[0][:5])
+                    else:
+                        print((w,w2))
