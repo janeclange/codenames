@@ -1,7 +1,7 @@
 import tqdm
 import pickle
 import numberbatch_guesser
-from functools import reduce
+from functools import lru_cache, reduce
 
 NUM_NEGATIVE_WORDS = 9
 powersetify = lambda s: reduce(lambda P, x: P + [subset | {x} for subset in P], s, [set()])
@@ -59,6 +59,7 @@ class ConceptNetGraph:
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
         return list(possible_clues)
         
+        
 def play_simulation(guesser, cluer):
 
     positive_words = {}
@@ -86,8 +87,6 @@ def play_simulation(guesser, cluer):
         return min(results, key=lambda x: x[1])
     
     return cluer_plus(positive_words, negative_words, neutral_words, assasin_words)
-    
-    
     
 
 if __name__=="__main__":
