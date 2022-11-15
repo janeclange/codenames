@@ -81,7 +81,7 @@ def play_simulation(guesser, cluer):
         for i in range(permutations):
             clue = cluer.clue(words)  # TODO clue multiple words
             guessed_words = guesser.guess(clue)  # TODO weigh guesses based on clue.
-            expected_score, best_clue = cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
+            best_clue, expected_score = cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
             results.append((clue, expected_score))
         
         return min(results, key=lambda x: x[1])
