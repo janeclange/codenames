@@ -1,6 +1,11 @@
 import tqdm
 import pickle
 import numberbatch_guesser
+from functools import reduce
+
+NUM_NEGATIVE_WORDS = 9
+powersetify = lambda s: reduce(lambda P, x: P + [subset | {x} for subset in P], s, [set()])
+
 class ConceptNetGraph:
     def __init__(self):
         self.edges = {} #dictionary of nodes -> list of edges
@@ -54,6 +59,36 @@ class ConceptNetGraph:
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
         return list(possible_clues)
         
+def play_simulation(guesser, cluer):
+
+    positive_words = {}
+    negative_words = {}
+    neutral_words = {}
+    assasin_words = {}
+    assert len(assasin_words) == 1
+
+    @lru_cache(maxsize=100000)
+    def cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
+        permutations = powersetify(positive_words)
+
+        terminal = (assasin_words not in assasin_words) or len(positive_words) == 0
+
+        if terminal:
+            return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
+
+        results = []  # pairs
+        for i in range(permutations):
+            clue = cluer.clue(words)  # TODO clue multiple words
+            guessed_words = guesser.guess(clue)  # TODO weigh guesses based on clue.
+            expected_score, best_clue = cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
+            results.append((clue, expected_score))
+        
+        return min(results, key=lambda x: x[1])
+    
+    return cluer_plus(positive_words, negative_words, neutral_words, assasin_words)
+    
+    
+    
 
 if __name__=="__main__":
     #g = ConceptNetGraph()
