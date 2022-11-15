@@ -1,7 +1,9 @@
-import tqdm
 import pickle
 import numberbatch_guesser
 from functools import lru_cache, reduce
+
+import numpy as np
+import tqdm
 
 NUM_NEGATIVE_WORDS = 9
 powersetify = lambda s: reduce(lambda P, x: P + [subset | {x} for subset in P], s, [set()])
@@ -59,34 +61,47 @@ class ConceptNetGraph:
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
         return list(possible_clues)
         
-        
+@lru_cache(maxsize=100000)
+def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
+    permutations = powersetify(positive_words)
+
+    terminal = (assasin_words not in assasin_words) or len(positive_words) == 0
+
+    if terminal:
+        return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
+
+    results = []  # pairs
+    for i in range(permutations):
+        clue = cluer.clue(i)  # TODO clue multiple words
+        guessed_words = guesser.guess(clue)  # TODO weigh guesses based on clue.
+        best_clue, expected_score = cluer_plus(guesser, cluer, positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
+        results.append((clue, expected_score))
+    
+    return min(results, key=lambda x: x[1])
+
+
 def play_simulation(guesser, cluer):
 
-    positive_words = {}
-    negative_words = {}
-    neutral_words = {}
-    assasin_words = {}
+    with open("codewords_simplified.txt") as file:
+        lines2 = [s.strip().lower() for s in file.readlines()]
+    common_words = np.sort(np.unique(np.array(lines2)))
+
+    positive_words = np.random.choice(common_words, 9, replace=False)
+    common_words = np.setdiff1d(common_words, positive_words)
+    positive_words = set(positive_words)
+
+    negative_words = np.random.choice(common_words, NUM_NEGATIVE_WORDS, replace=False)
+    common_words = np.setdiff1d(common_words, negative_words)
+    negative_words = set(negative_words)
+
+    neutral_words = np.random.choice(common_words, 7, replace=False)
+    common_words = np.setdiff1d(common_words, neutral_words)
+    neutral_words = set(neutral_words)
+
+    assasin_words = set(np.random.choice(common_words, 1, replace=False))
     assert len(assasin_words) == 1
-
-    @lru_cache(maxsize=100000)
-    def cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
-        permutations = powersetify(positive_words)
-
-        terminal = (assasin_words not in assasin_words) or len(positive_words) == 0
-
-        if terminal:
-            return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
-
-        results = []  # pairs
-        for i in range(permutations):
-            clue = cluer.clue(words)  # TODO clue multiple words
-            guessed_words = guesser.guess(clue)  # TODO weigh guesses based on clue.
-            best_clue, expected_score = cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
-            results.append((clue, expected_score))
-        
-        return min(results, key=lambda x: x[1])
     
-    return cluer_plus(positive_words, negative_words, neutral_words, assasin_words)
+    return cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words)
     
 
 if __name__=="__main__":
