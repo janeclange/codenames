@@ -66,11 +66,6 @@ class ConceptNetGraph:
         if possible_clues:
             scored_clues = guesser.score_clues([w,w2],list(possible_clues))
             return scored_clues[0]
-    def get_two_word_clue(self, word1, word2):
-        clues = g.get_two_word_clue(w,w2)
-        clues = guesser.filter_valid_words(clues)
-        if clues:
-            scored_clues = guesser.score_clues([w,w2],clues)
 
         
 
