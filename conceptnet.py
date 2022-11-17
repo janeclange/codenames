@@ -75,10 +75,13 @@ def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, as
     def cached_cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
         permutations = powersetify(positive_words)
         permutations.remove(set())
+        # Enforce that the number of words for a clue is not greater than 2
         permutations = [a for a in permutations if len(a) < 3]
+        # Check if the board is in a final state
         terminal = len(assasin_words) == 0 or len(positive_words) == 0
         if terminal:
             return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
+        # Consider giving a clue for each possible combination of positive words
         results = []  # pairs
         for i in permutations:
             clue_size = len(i) # TODO see next comment
@@ -88,15 +91,18 @@ def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, as
                 clue = guesser.filter_valid_words(cluer.get_two_word_clue(*i))[0]  # TODO clue multiple words
             else:
                 raise ValueError("clue size must be 1 or 2")
+            # Get the guessed words
             try:
                 guesser_rankings, _guesser_scores = guesser.guess(clue, list(positive_words) + list(negative_words) + list(negative_words) + list(assasin_words), clue_size)  # TODO weigh guesses based on clue.
             except:
                 import IPython; IPython.embed()
+            # Simulate the guessing process
             guessed_words = set()
             for i in range(clue_size):
                 guessed_words.add(guesser_rankings[i])
                 if guesser_rankings[i] not in positive_words:
                     break
+            # Get the score of this new board.
             _best_clue, expected_score = cached_cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words - guessed_words, num_moves+1)
             results.append((clue, expected_score))
         return min(results, key=lambda x: x[1])
