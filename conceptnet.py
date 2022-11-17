@@ -34,6 +34,8 @@ class ConceptNetGraph:
         with open("conceptnet-assertions-en","wb") as f:
             pickle.dump(self, f)
     def load_graph():
+        if "conceptnet-assertions-en" not in os.listdir():
+            raise FileNotFoundError("You need to download the conceptnet assertions file from https://s3.amazonaws.com/conceptnet/downloads/2019/edges/conceptnet-assertions-5.7.0.csv.gz")
         with open("conceptnet-assertions-en","rb") as f:
             return pickle.load(f)
     def get_distance_k_neighbors(self, word, k):
@@ -61,23 +63,31 @@ class ConceptNetGraph:
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
         return list(possible_clues)
         
-@lru_cache(maxsize=100000)
+
 def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
-    permutations = powersetify(positive_words)
 
-    terminal = (assasin_words not in assasin_words) or len(positive_words) == 0
-
-    if terminal:
-        return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
-
-    results = []  # pairs
-    for i in range(permutations):
-        clue = cluer.clue(i)  # TODO clue multiple words
-        guessed_words = guesser.guess(clue)  # TODO weigh guesses based on clue.
-        best_clue, expected_score = cluer_plus(guesser, cluer, positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
-        results.append((clue, expected_score))
+    @lru_cache(maxsize=100000)
+    def cached_cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
+        permutations = powersetify(positive_words)
+        terminal = (assasin_words not in assasin_words) or len(positive_words) == 0
+        if terminal:
+            return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
+        results = []  # pairs
+        for i in range(permutations):
+            clue_size = 2 # TODO see next comment
+            clue = cluer.get_two_word_clue(i)[0]  # TODO clue multiple words
+            guesser_rankings = guesser.guess(clue, list(positive_words + negative_words + negative_words + assasin_words))  # TODO weigh guesses based on clue.
+            guessed_words = set()
+            for i in range(clue_size):
+                guessed_words += guesser_rankings[i]
+                if guesser_rankings[i] not in positive_words:
+                    break
+            _best_clue, expected_score = cached_cluer_plus(guesser, cluer, positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
+            results.append((clue, expected_score))
+        
+        return min(results, key=lambda x: x[1])
     
-    return min(results, key=lambda x: x[1])
+    return cached_cluer_plus
 
 
 def play_simulation(guesser, cluer):
@@ -105,8 +115,8 @@ def play_simulation(guesser, cluer):
     
 
 if __name__=="__main__":
-    #g = ConceptNetGraph()
-    #g.parse_graph()
+    # g = ConceptNetGraph()
+    # g.parse_graph()
     g = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
