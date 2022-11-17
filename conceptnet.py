@@ -1,3 +1,4 @@
+import os
 import pickle
 import numberbatch_guesser
 from functools import lru_cache, reduce
@@ -6,7 +7,7 @@ import numpy as np
 import tqdm
 
 NUM_NEGATIVE_WORDS = 9
-powersetify = lambda s: reduce(lambda P, x: P + [subset | {x} for subset in P], s, [set()])
+powersetify = lambda s : reduce(lambda P, x: P + [subset | {x} for subset in P], s, [set()])
 
 class ConceptNetGraph:
     def __init__(self):
@@ -65,52 +66,65 @@ class ConceptNetGraph:
         
 
 def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
-
-    @lru_cache(maxsize=100000)
+    # @lru_cache(maxsize=100000)
     def cached_cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
         permutations = powersetify(positive_words)
-        terminal = (assasin_words not in assasin_words) or len(positive_words) == 0
+        permutations.remove(set())
+        permutations = [a for a in permutations if len(a) < 3]
+        terminal = len(assasin_words) == 0 or len(positive_words) == 0
         if terminal:
             return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
         results = []  # pairs
-        for i in range(permutations):
-            clue_size = 2 # TODO see next comment
-            clue = cluer.get_two_word_clue(i)[0]  # TODO clue multiple words
-            guesser_rankings = guesser.guess(clue, list(positive_words + negative_words + negative_words + assasin_words))  # TODO weigh guesses based on clue.
+        for i in permutations:
+            clue_size = len(i) # TODO see next comment
+            if clue_size == 1:
+                clue = guesser.filter_valid_words(list(cluer.get_distance_k_neighbors(list(i)[0], 1).keys()))[1]
+            elif clue_size == 2:
+                clue = guesser.filter_valid_words(cluer.get_two_word_clue(*i))[0]  # TODO clue multiple words
+            else:
+                raise ValueError("clue size must be 1 or 2")
+            try:
+                guesser_rankings, _guesser_scores = guesser.guess(clue, list(positive_words) + list(negative_words) + list(negative_words) + list(assasin_words), clue_size)  # TODO weigh guesses based on clue.
+            except:
+                import IPython; IPython.embed()
             guessed_words = set()
             for i in range(clue_size):
-                guessed_words += guesser_rankings[i]
+                guessed_words.add(guesser_rankings[i])
                 if guesser_rankings[i] not in positive_words:
                     break
-            _best_clue, expected_score = cached_cluer_plus(guesser, cluer, positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words, num_moves+1)
+            _best_clue, expected_score = cached_cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words - guessed_words, num_moves+1)
             results.append((clue, expected_score))
-        
         return min(results, key=lambda x: x[1])
-    
-    return cached_cluer_plus
+    return cached_cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves)
 
 
-def play_simulation(guesser, cluer):
-
+def play_simulation(guesser, cluer, verbose = False):
     with open("codewords_simplified.txt") as file:
         lines2 = [s.strip().lower() for s in file.readlines()]
     common_words = np.sort(np.unique(np.array(lines2)))
-
+    # Positive words
     positive_words = np.random.choice(common_words, 9, replace=False)
     common_words = np.setdiff1d(common_words, positive_words)
     positive_words = set(positive_words)
-
+    if verbose:
+        print(f"Positive words: {positive_words}")
+    # Negative words
     negative_words = np.random.choice(common_words, NUM_NEGATIVE_WORDS, replace=False)
     common_words = np.setdiff1d(common_words, negative_words)
     negative_words = set(negative_words)
-
+    if verbose:
+        print(f"Negative words: {negative_words}")
+    # Neutral words
     neutral_words = np.random.choice(common_words, 7, replace=False)
     common_words = np.setdiff1d(common_words, neutral_words)
     neutral_words = set(neutral_words)
-
+    if verbose:
+        print(f"Neutral words: {neutral_words}")
+    # Assasin words
     assasin_words = set(np.random.choice(common_words, 1, replace=False))
+    if verbose:
+        print(f"Assasin words: {assasin_words}")
     assert len(assasin_words) == 1
-    
     return cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words)
     
 
