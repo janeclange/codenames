@@ -57,12 +57,17 @@ class ConceptNetGraph:
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
         possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys()))
+        possible_clues = guesser.filter_valid_words(possible_clues)
         if possible_clues:
-            return list(possible_clues)
+            scored_clues = guesser.score_clues([w,w2],list(possible_clues))
+            return scored_clues[0]
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
-        return list(possible_clues)
+        if possible_clues:
+            scored_clues = guesser.score_clues([w,w2],list(possible_clues))
+            return scored_clues[0]
+
         
 
 def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
