@@ -108,7 +108,7 @@ def play_simulation(guesser, cluer, verbose = False):
         lines2 = [s.strip().lower() for s in file.readlines()]
     common_words = np.sort(np.unique(np.array(lines2)))
     # Positive words
-    positive_words = np.random.choice(common_words, 9, replace=False)
+    positive_words = np.random.choice(common_words, 2, replace=False)
     common_words = np.setdiff1d(common_words, positive_words)
     positive_words = set(positive_words)
     if verbose:
@@ -120,7 +120,7 @@ def play_simulation(guesser, cluer, verbose = False):
     if verbose:
         print(f"Negative words: {negative_words}")
     # Neutral words
-    neutral_words = np.random.choice(common_words, 7, replace=False)
+    neutral_words = np.random.choice(common_words, 2, replace=False)
     common_words = np.setdiff1d(common_words, neutral_words)
     neutral_words = set(neutral_words)
     if verbose:
@@ -139,9 +139,12 @@ if __name__=="__main__":
     g = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
-    with open("out.txt","w",encoding="utf8") as f:
-        f.write(str(g.get_distance_k_neighbors("keyboard",2)))
+    play_simulation(guesser, g, verbose=True)
 
+def compute_all_two_word_clues():
+    g = ConceptNetGraph.load_graph()
+    guesser = numberbatch_guesser.Guesser()
+    guesser.load_data()
     with open("codewords_simplified.txt") as f: 
         codewords = [x.strip() for x in f.readlines()]
         for w in codewords:
