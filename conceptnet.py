@@ -157,7 +157,7 @@ def play_simulation(guesser, cluer, verbose = False, use_multi=True):
     if verbose:
         print(f"Negative words: {negative_words}")
     # Neutral words
-    neutral_words = np.random.choice(common_words, 7, replace=False)
+    neutral_words = np.random.choice(common_words, 2, replace=False)
     common_words = np.setdiff1d(common_words, neutral_words)
     neutral_words = set(neutral_words)
     if verbose:
@@ -181,29 +181,25 @@ def run():
 if __name__ == "__main__":
     run()
 
-# if __name__=="__main__":
-#     # g = ConceptNetGraph()
-#     # g.parse_graph()
-#     g = ConceptNetGraph.load_graph()
-#     guesser = numberbatch_guesser.Guesser()
-#     guesser.load_data()
-#     with open("out.txt","w",encoding="utf8") as f:
-#         f.write(str(g.get_distance_k_neighbors("keyboard",2)))
-#
-#     with open("codewords_simplified.txt") as f:
-#         codewords = [x.strip() for x in f.readlines()]
-#         for w in codewords:
-#             w = w.replace(" ","_").lower()
-#             for w2 in codewords:
-#                 w2 = w2.replace(" ","_").lower()
-#                 if w!=w2:
-#                     #print((w,w2),g.get_two_word_clue(w,w2))
-#                     clues = g.get_two_word_clue(w,w2, guesser)
-#                     #print([w,w2])
-#                     #print(clues)
-#                     clues = guesser.filter_valid_words(clues)
-#                     if clues:
-#                         scored_clues = guesser.score_clues([w,w2],clues)
-#                         print((w,w2), scored_clues[0][:5])
-#                     else:
-#                         print((w,w2))
+
+def compute_all_two_word_clues():
+    g = ConceptNetGraph.load_graph()
+    guesser = numberbatch_guesser.Guesser()
+    guesser.load_data()
+    with open("codewords_simplified.txt") as f: 
+        codewords = [x.strip() for x in f.readlines()]
+        for w in codewords:
+            w = w.replace(" ","_").lower()
+            for w2 in codewords:
+                w2 = w2.replace(" ","_").lower()
+                if w!=w2:
+                    #print((w,w2),g.get_two_word_clue(w,w2))
+                    clues = g.get_two_word_clue(w,w2)
+                    #print([w,w2])
+                    #print(clues)
+                    clues = guesser.filter_valid_words(clues)
+                    if clues:
+                        scored_clues = guesser.score_clues([w,w2],clues)
+                        print((w,w2), scored_clues[0][:5])
+                    else:
+                        print((w,w2))

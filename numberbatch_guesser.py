@@ -76,7 +76,7 @@ class Guesser:
         inner_prods = self.eval_inner_products(self.find_vecs(target), self.find_vecs(clues))
         maxes = np.amin(inner_prods, axis=0)
         sort_inds = np.argsort(maxes)[::-1]
-        print(inner_prods)
+        #print(inner_prods)
         return np.array(clues)[sort_inds], maxes[sort_inds]
         
 
