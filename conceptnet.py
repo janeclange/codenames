@@ -74,6 +74,17 @@ class ConceptNetGraph:
         else:
             return []
 
+    def all_intersections(sets, current=None):
+        if sets:
+            return [all_intersections(sets[1:], current=current), all_intersections(sets[1:], current=current.intersection(sets[0]) if current!=None else sets[0])]
+        else:
+            return current
+    def get_k_word_clue(self, words, guesser):
+        neighbors_1 = [self.get_distance_k_neighbors(w,1) for w in words]
+        neighbors_2 = [self.get_distance_k_neighbors(w,2) for w in words]
+        size_1_intersections = []
+
+
         
 # Helper for Cluer Plus
 def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves):
