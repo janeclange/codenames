@@ -47,12 +47,14 @@ class Guesser:
         self.embedding = vecs[valid_inds].astype(np.int64)
 
     def filter_valid_words(self, ws):
+        ws = list(ws)
         inds = np.searchsorted(self.words, ws)
         #print(list(zip(ws,inds)))
         result = [word for word,ind in zip(ws,inds) if ind<len(self.words) and word==self.words[ind]]
         return result
 
-    def find_vecs(self, ws):
+    def find_vecs(self, ws: list):
+        ws = list(ws)
         inds = np.searchsorted(self.words, ws)
         for i in range(len(ws)):
             if self.words[inds[i]] != ws[i]:
