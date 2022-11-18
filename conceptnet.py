@@ -1,12 +1,17 @@
+import functools
+import multiprocessing
 import os
 import pickle
 import numberbatch_guesser
+import time
 from functools import lru_cache, reduce
 
 import numpy as np
 import tqdm
 
 NUM_NEGATIVE_WORDS = 9
+# NUM_POSITIVE_WORDS = 9
+NUM_POSITIVE_WORDS = 5
 powersetify = lambda s : reduce(lambda P, x: P + [subset | {x} for subset in P], s, [set()])
 
 class ConceptNetGraph:
@@ -40,7 +45,7 @@ class ConceptNetGraph:
         with open("conceptnet-assertions-en","rb") as f:
             return pickle.load(f)
     def get_distance_k_neighbors(self, word, k):
-        #return a dictionary where keys are distance k words, and values are lists that are the path to that word
+        # return a dictionary where keys are distance k words, and values are lists that are the path to that word
         l={word:[word]}
         for i in range(k):
             l_temp = list(l.keys()).copy()
@@ -53,68 +58,94 @@ class ConceptNetGraph:
                         if degree>10 and degree<1000:
                             l[neighbor] = l[w] + [(neighbor,degree)]
         return l
-    def get_two_word_clue(self, word1, word2):
+    def get_two_word_clue(self, word1:str, word2:str):
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
         possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys()))
-        possible_clues = guesser.filter_valid_words(possible_clues)
         if possible_clues:
-            scored_clues = guesser.score_clues([w,w2],list(possible_clues))
-            return scored_clues[0]
+            return list(possible_clues)
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
-        if possible_clues:
-            scored_clues = guesser.score_clues([w,w2],list(possible_clues))
-            return scored_clues[0]
+        return list(possible_clues)
 
         
+# Helper for Cluer Plus
+def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves):
+    clue_size = len(i)  # TODO see next comment
+    if clue_size == 1:
+        clues = guesser.filter_valid_words(list(cluer.get_distance_k_neighbors(list(i)[0], 1).keys()))
+        if len(clues) > 0:
+            clue = clues[1]
+        else:
+            print("No valid clue found for words: ", list(i))
+            return None
+    elif clue_size == 2:
+        clues = guesser.filter_valid_words(cluer.get_two_word_clue(*i))  # TODO clue multiple words
+        if len(clues) > 0:
+            clue = clues[0]
+        else:
+            print("No valid clue found for words: ", list(i))
+            return None
+    else:
+        raise ValueError("clue size must be 1 or 2")
+    # Get the guessed words
+    try:
+        guesser_rankings, _guesser_scores = guesser.guess(clue, list(positive_words) + list(negative_words) + list(
+            negative_words) + list(assasin_words), clue_size)  # TODO weigh guesses based on clue.
+    except Exception as e:
+        print(e)
+        import IPython; IPython.embed()
+    # Simulate the guessing process
+    guessed_words = set()
+    for i in range(clue_size):
+        guessed_words.add(guesser_rankings[i])
+        if guesser_rankings[i] not in positive_words:
+            break
+    # Get the score of this new board.
+    _best_clue, expected_score = cached_cluer_plus(guesser, cluer, positive_words - guessed_words,
+                                                   negative_words - guessed_words,
+                                                   neutral_words - guessed_words, assasin_words - guessed_words,
+                                                   num_moves + 1, False)
+    return clue, expected_score
 
-def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
-    # @lru_cache(maxsize=100000)
-    def cached_cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves = 0):
-        permutations = powersetify(positive_words)
-        permutations.remove(set())
-        # Enforce that the number of words for a clue is not greater than 2
-        permutations = [a for a in permutations if len(a) < 3]
-        # Check if the board is in a final state
-        terminal = len(assasin_words) == 0 or len(positive_words) == 0
-        if terminal:
-            return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
-        # Consider giving a clue for each possible combination of positive words
+# @lru_cache(maxsize=100000)
+def cached_cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0, use_multi = False):
+    permutations = powersetify(positive_words)
+    permutations.remove(set())
+    # Enforce that the number of words for a clue is not greater than 2
+    permutations = [a for a in permutations if len(a) < 3]
+    # Check if the board is in a final state
+    terminal = len(assasin_words) == 0 or len(positive_words) == 0
+    if terminal:
+        return "", num_moves + (NUM_NEGATIVE_WORDS - len(negative_words)) + (not len(assasin_words)) * 25
+    # Consider giving a clue for each possible combination of positive words
+    if use_multi:
+        cpus = multiprocessing.cpu_count()
+        print(f"Creating multiprocessing pool with {cpus} cpus")
+        with multiprocessing.Pool(cpus) as p:
+            func = functools.partial(eval_permutation, guesser=guesser, cluer=cluer, positive_words=positive_words,
+                                     negative_words=negative_words, neutral_words=neutral_words,
+                                     assasin_words=assasin_words, num_moves=num_moves)
+            results = list(tqdm.tqdm(p.imap(func, permutations), total=len(permutations)))
+    else:
         results = []  # pairs
         for i in permutations:
-            clue_size = len(i) # TODO see next comment
-            if clue_size == 1:
-                clue = guesser.filter_valid_words(list(cluer.get_distance_k_neighbors(list(i)[0], 1).keys()))[1]
-            elif clue_size == 2:
-                clue = guesser.filter_valid_words(cluer.get_two_word_clue(*i))[0]  # TODO clue multiple words
-            else:
-                raise ValueError("clue size must be 1 or 2")
-            # Get the guessed words
-            try:
-                guesser_rankings, _guesser_scores = guesser.guess(clue, list(positive_words) + list(negative_words) + list(negative_words) + list(assasin_words), clue_size)  # TODO weigh guesses based on clue.
-            except:
-                import IPython; IPython.embed()
-            # Simulate the guessing process
-            guessed_words = set()
-            for i in range(clue_size):
-                guessed_words.add(guesser_rankings[i])
-                if guesser_rankings[i] not in positive_words:
-                    break
-            # Get the score of this new board.
-            _best_clue, expected_score = cached_cluer_plus(positive_words - guessed_words, negative_words - guessed_words, neutral_words - guessed_words, assasin_words - guessed_words, num_moves+1)
-            results.append((clue, expected_score))
-        return min(results, key=lambda x: x[1])
-    return cached_cluer_plus(positive_words, negative_words, neutral_words, assasin_words, num_moves)
+            results.append(
+                eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_words, assasin_words,
+                                 num_moves))
+    return min(results, key=lambda x: x[1])
+
+def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0, use_multi=True):
+    return cached_cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves, use_multi=use_multi)
 
 
-def play_simulation(guesser, cluer, verbose = False):
+def play_simulation(guesser, cluer, verbose = False, use_multi=True):
     with open("codewords_simplified.txt") as file:
         lines2 = [s.strip().lower() for s in file.readlines()]
     common_words = np.sort(np.unique(np.array(lines2)))
     # Positive words
-    positive_words = np.random.choice(common_words, 9, replace=False)
+    positive_words = np.random.choice(common_words, NUM_POSITIVE_WORDS, replace=False)
     common_words = np.setdiff1d(common_words, positive_words)
     positive_words = set(positive_words)
     if verbose:
@@ -136,32 +167,43 @@ def play_simulation(guesser, cluer, verbose = False):
     if verbose:
         print(f"Assasin words: {assasin_words}")
     assert len(assasin_words) == 1
-    return cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words)
-    
+    return cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, use_multi=use_multi)
 
-if __name__=="__main__":
-    # g = ConceptNetGraph()
-    # g.parse_graph()
-    g = ConceptNetGraph.load_graph()
+def run():
+    cluer = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
-    with open("out.txt","w",encoding="utf8") as f:
-        f.write(str(g.get_distance_k_neighbors("keyboard",2)))
+    start = time.time()
+    print(play_simulation(guesser, cluer, verbose=True, use_multi=True))
+    end = time.time()
+    print(f"Duration: {end - start} seconds")
 
-    with open("codewords_simplified.txt") as f: 
-        codewords = [x.strip() for x in f.readlines()]
-        for w in codewords:
-            w = w.replace(" ","_").lower()
-            for w2 in codewords:
-                w2 = w2.replace(" ","_").lower()
-                if w!=w2:
-                    #print((w,w2),g.get_two_word_clue(w,w2))
-                    clues = g.get_two_word_clue(w,w2)
-                    #print([w,w2])
-                    #print(clues)
-                    clues = guesser.filter_valid_words(clues)
-                    if clues:
-                        scored_clues = guesser.score_clues([w,w2],clues)
-                        print((w,w2), scored_clues[0][:5])
-                    else:
-                        print((w,w2))
+if __name__ == "__main__":
+    run()
+
+# if __name__=="__main__":
+#     # g = ConceptNetGraph()
+#     # g.parse_graph()
+#     g = ConceptNetGraph.load_graph()
+#     guesser = numberbatch_guesser.Guesser()
+#     guesser.load_data()
+#     with open("out.txt","w",encoding="utf8") as f:
+#         f.write(str(g.get_distance_k_neighbors("keyboard",2)))
+#
+#     with open("codewords_simplified.txt") as f:
+#         codewords = [x.strip() for x in f.readlines()]
+#         for w in codewords:
+#             w = w.replace(" ","_").lower()
+#             for w2 in codewords:
+#                 w2 = w2.replace(" ","_").lower()
+#                 if w!=w2:
+#                     #print((w,w2),g.get_two_word_clue(w,w2))
+#                     clues = g.get_two_word_clue(w,w2, guesser)
+#                     #print([w,w2])
+#                     #print(clues)
+#                     clues = guesser.filter_valid_words(clues)
+#                     if clues:
+#                         scored_clues = guesser.score_clues([w,w2],clues)
+#                         print((w,w2), scored_clues[0][:5])
+#                     else:
+#                         print((w,w2))
