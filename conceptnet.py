@@ -2,9 +2,11 @@ import functools
 import multiprocessing
 import os
 import pickle
+import random
+
 import numberbatch_guesser
 import time
-from functools import lru_cache, reduce
+from functools import reduce
 import cachetools
 import cachetools.keys
 
@@ -12,13 +14,16 @@ import numpy as np
 import tqdm
 
 NUM_NEGATIVE_WORDS = 9
-NUM_POSITIVE_WORDS = 3
+NUM_POSITIVE_WORDS = 7
 powersetify = lambda s : reduce(lambda P, x: P + [subset | frozenset([x]) for subset in P], s, [frozenset()])
 
 class ConceptNetGraph:
+    cache = cachetools.LRUCache(maxsize=1000000)
+
     def __init__(self):
         self.edges = {} #dictionary of nodes -> list of edges
-        pass
+
+
     def parse_graph(self):
         #read the file with all the edges in concept net, and put them in the dictionary
         with open("conceptnet-assertions-5.7.0.csv",encoding="utf8") as f:
@@ -47,7 +52,7 @@ class ConceptNetGraph:
         with open("conceptnet-assertions-en","rb") as f:
             return pickle.load(f)
 
-    # @lru_cache()
+    @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word, k : cachetools.keys.methodkey(self, word, k))
     def get_distance_k_neighbors(self, word, k):
         # return a dictionary where keys are distance k words, and values are lists that are the path to that word
         l={word:[word]}
@@ -63,10 +68,11 @@ class ConceptNetGraph:
                             l[neighbor] = l[w] + [(neighbor,degree)]
         return l
 
-    def get_two_word_clue(self, word1:str, word2:str, guesser):
+    @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2, guesser : cachetools.keys.methodkey(self, word1, word2))
+    def get_two_word_clue(self, word1: str, word2: str, guesser):
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
-        possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys())) - set([word1,word2])
+        possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys())) - {word1, word2}
         possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
             return guesser.score_clues([word1,word2],possible_clues)[0]
@@ -75,11 +81,12 @@ class ConceptNetGraph:
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys()))) - set([word1,word2])
         possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
-            return guesser.score_clues([word1,word2],possible_clues)[0]
+            return guesser.score_clues([word1,word2], possible_clues)[0]
         else:
             return []
 
-    def get_k_word_clue(self, words, guesser,verbose=False):
+    @cachetools.cachedmethod(lambda self: self.cache, key=lambda self, words, guesser, verbose: cachetools.keys.methodkey(self, words, verbose * random.random()))
+    def get_k_word_clue(self, words, guesser, verbose=False):
         neighbors_1 = [self.get_distance_k_neighbors(w,1) for w in words]
         neighbors_2 = [self.get_distance_k_neighbors(w,2) for w in words]
         all_intersections = lambda x:set(x[0].keys()).intersection(all_intersections(x[1:])) if len(x)>1 else set(x[0].keys())
@@ -92,11 +99,9 @@ class ConceptNetGraph:
             print([([v[w] for v in neighbors_2],w) for (x,w) in possible_clues])
             print(possible_clues)
         return [w for (x,w) in possible_clues]
-
-
         
 # Helper for Cluer Plus
-# @cachetools.cached(cache={}, key=lambda i, guesser, cluer, pos, neg, neu, ass, num_moves : cachetools.keys.hashkey(i, pos, neg, neu, ass, num_moves))
+@cachetools.cached(cache={}, key=lambda i, guesser, cluer, pos, neg, neu, ass, num_moves : cachetools.keys.hashkey(i, pos, neg, neu, ass, num_moves))
 def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves):
     clue_size = len(i)  # TODO see next comment
     if clue_size == 1:
@@ -130,11 +135,11 @@ def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_
                                                    negative_words - guessed_words,
                                                    neutral_words - guessed_words, assasin_words - guessed_words,
                                                    num_moves + 1, False)
-    return clue + f"+{_best_clue}", expected_score
+    clue_to_string = clue + f"+{_best_clue}" if not _best_clue == "" else clue
+    return clue_to_string, expected_score
 
-# @cachetools.cached(cache={}, key=lambda guesser, cluer, pos, neg, neu, ass, num_moves, use_multi : cachetools.keys.hashkey(pos, neg, neu, ass, num_moves))
+@cachetools.cached(cache={}, key=lambda guesser, cluer, pos, neg, neu, ass, num_moves, use_multi : cachetools.keys.hashkey(pos, neg, neu, ass, num_moves))
 def cached_cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, num_moves = 0, use_multi = False):
-    print(positive_words)
     permutations = powersetify(positive_words)
     permutations.remove(frozenset())
     # Enforce that the number of words for a clue is not greater than 2
