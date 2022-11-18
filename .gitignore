@@ -2,3 +2,4 @@ GoogleNews_vectors.bin
 conceptnet-assertions
 mini.h5
 wiki-100k.txt
+__pycache__

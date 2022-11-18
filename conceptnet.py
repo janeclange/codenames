@@ -53,7 +53,7 @@ class ConceptNetGraph:
                         if degree>10 and degree<1000:
                             l[neighbor] = l[w] + [(neighbor,degree)]
         return l
-    def get_two_word_clue(self, word1, word2):
+    def get_two_word_clue(self, word1, word2, guesser):
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
         possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys()))
@@ -89,7 +89,7 @@ def cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, as
             if clue_size == 1:
                 clue = guesser.filter_valid_words(list(cluer.get_distance_k_neighbors(list(i)[0], 1).keys()))[1]
             elif clue_size == 2:
-                clue = guesser.filter_valid_words(cluer.get_two_word_clue(*i))[0]  # TODO clue multiple words
+                clue = guesser.filter_valid_words(cluer.get_two_word_clue(*i,guesser))[0]  # TODO clue multiple words
             else:
                 raise ValueError("clue size must be 1 or 2")
             # Get the guessed words
