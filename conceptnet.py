@@ -14,7 +14,7 @@ import numpy as np
 import tqdm
 
 NUM_NEGATIVE_WORDS = 9
-NUM_POSITIVE_WORDS = 7
+NUM_POSITIVE_WORDS = 8
 powersetify = lambda s : reduce(lambda P, x: P + [subset | frozenset([x]) for subset in P], s, [frozenset()])
 
 class ConceptNetGraph:
@@ -85,9 +85,8 @@ class ConceptNetGraph:
         else:
             return []
 
-    @cachetools.cachedmethod(lambda self: self.cache, key=lambda self, words, guesser, verbose: cachetools.keys.methodkey(self, words, verbose * random.random()))
+    @cachetools.cachedmethod(lambda self: self.cache, key=lambda self, words, guesser, verbose=False: cachetools.keys.methodkey(self, words))
     def get_k_word_clue(self, words, guesser, verbose=False):
-        neighbors_1 = [self.get_distance_k_neighbors(w,1) for w in words]
         neighbors_2 = [self.get_distance_k_neighbors(w,2) for w in words]
         all_intersections = lambda x:set(x[0].keys()).intersection(all_intersections(x[1:])) if len(x)>1 else set(x[0].keys())
         all_size_2_intersections = all_intersections(neighbors_2) - set(words)
@@ -119,7 +118,13 @@ def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_
             print("No valid clue found for words: ", list(i))
             return None
     else:
-        raise ValueError("clue size must be 1 or 2")
+        clues = cluer.get_k_word_clue(i, guesser)
+        if len(clues) > 0:
+            clue = clues[0]
+        else:
+            print("No valid clue found for words: ", list(i))
+            return None
+
     # Get the guessed words
     guesser_rankings, _guesser_scores = guesser.guess(clue, list(positive_words) + list(negative_words) + list(
         negative_words) + list(assasin_words), clue_size)  # TODO weigh guesses based on clue.
@@ -143,7 +148,7 @@ def cached_cluer_plus(guesser, cluer, positive_words, negative_words, neutral_wo
     permutations = powersetify(positive_words)
     permutations.remove(frozenset())
     # Enforce that the number of words for a clue is not greater than 2
-    permutations = [a for a in permutations if len(a) < 3]
+    # permutations = [a for a in permutations if len(a) < 3]
     # Check if the board is in a final state
     terminal = len(assasin_words) == 0 or len(positive_words) == 0
     if terminal:
