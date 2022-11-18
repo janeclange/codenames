@@ -57,15 +57,16 @@ class ConceptNetGraph:
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
         possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys()))
-        possible_clues = guesser.filter_valid_words(possible_clues)
+        possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
-            scored_clues = guesser.score_clues([w,w2],list(possible_clues))
+            scored_clues = guesser.score_clues([word1,word2],possible_clues)
             return scored_clues[0]
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
+        possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
-            scored_clues = guesser.score_clues([w,w2],list(possible_clues))
+            scored_clues = guesser.score_clues([word1,word2],possible_clues)
             return scored_clues[0]
 
         
@@ -114,7 +115,7 @@ def play_simulation(guesser, cluer, verbose = False):
         lines2 = [s.strip().lower() for s in file.readlines()]
     common_words = np.sort(np.unique(np.array(lines2)))
     # Positive words
-    positive_words = np.random.choice(common_words, 2, replace=False)
+    positive_words = np.random.choice(common_words, 4, replace=False)
     common_words = np.setdiff1d(common_words, positive_words)
     positive_words = set(positive_words)
     if verbose:
@@ -145,7 +146,8 @@ if __name__=="__main__":
     g = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
-    play_simulation(guesser, g, verbose=True)
+    clue = play_simulation(guesser, g, verbose=True)
+    print(clue)
 
 def compute_all_two_word_clues():
     g = ConceptNetGraph.load_graph()
