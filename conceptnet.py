@@ -64,13 +64,13 @@ class ConceptNetGraph:
         possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys()))
         possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
-            return guesser.score_clues(possible_clues)[0]
+            return guesser.score_clues([word1,word2],possible_clues)[0]
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
         possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
         possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
-            return guesser.score_clues(possible_clues)[0]
+            return guesser.score_clues([word1,word2],possible_clues)[0]
         else:
             return []
 
