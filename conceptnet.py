@@ -12,7 +12,6 @@ import numpy as np
 import tqdm
 
 NUM_NEGATIVE_WORDS = 9
-# NUM_POSITIVE_WORDS = 9
 NUM_POSITIVE_WORDS = 3
 powersetify = lambda s : reduce(lambda P, x: P + [subset | frozenset([x]) for subset in P], s, [frozenset()])
 
@@ -64,17 +63,36 @@ class ConceptNetGraph:
                             l[neighbor] = l[w] + [(neighbor,degree)]
         return l
 
-    @lru_cache()
-    def get_two_word_clue(self, word1:str, word2:str):
+    def get_two_word_clue(self, word1:str, word2:str, guesser):
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
-        possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys()))
+        possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys())) - set([word1,word2])
+        possible_clues = guesser.filter_valid_words(list(possible_clues))
         if possible_clues:
-            return list(possible_clues)
+            return guesser.score_clues([word1,word2],possible_clues)[0]
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
-        possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
-        return list(possible_clues)
+        possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys()))) - set([word1,word2])
+        possible_clues = guesser.filter_valid_words(list(possible_clues))
+        if possible_clues:
+            return guesser.score_clues([word1,word2],possible_clues)[0]
+        else:
+            return []
+
+    def get_k_word_clue(self, words, guesser,verbose=False):
+        neighbors_1 = [self.get_distance_k_neighbors(w,1) for w in words]
+        neighbors_2 = [self.get_distance_k_neighbors(w,2) for w in words]
+        all_intersections = lambda x:set(x[0].keys()).intersection(all_intersections(x[1:])) if len(x)>1 else set(x[0].keys())
+        all_size_2_intersections = all_intersections(neighbors_2) - set(words)
+        possible_clues = guesser.filter_valid_words(list(all_size_2_intersections))
+        if verbose:
+            print(possible_clues)
+        possible_clues = sorted([(sum(len(v[w]) for v in neighbors_2),w) for w in possible_clues])
+        if verbose:
+            print([([v[w] for v in neighbors_2],w) for (x,w) in possible_clues])
+            print(possible_clues)
+        return [w for (x,w) in possible_clues]
+
 
         
 # Helper for Cluer Plus
@@ -89,7 +107,7 @@ def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_
             print("No valid clue found for words: ", list(i))
             return None
     elif clue_size == 2:
-        clues = guesser.filter_valid_words(cluer.get_two_word_clue(*i))  # TODO clue multiple words
+        clues = guesser.filter_valid_words(cluer.get_two_word_clue(*i, guesser))  # TODO clue multiple words
         if len(clues) > 0:
             clue = clues[0]
         else:
@@ -185,10 +203,6 @@ def run():
     end = time.time()
     print(f"Duration: {end - start} seconds")
 
-if __name__ == "__main__":
-    run()
-
-
 def compute_all_two_word_clues():
     g = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
@@ -210,3 +224,14 @@ def compute_all_two_word_clues():
                         print((w,w2), scored_clues[0][:5])
                     else:
                         print((w,w2))
+def test_three_word_clue():
+    g = ConceptNetGraph.load_graph()
+    guesser = numberbatch_guesser.Guesser()
+    guesser.load_data()
+    print(g.get_k_word_clue(["apple","game","pie"],guesser))
+    print(g.get_two_word_clue("palm","glove",guesser))
+
+
+if __name__ == "__main__":
+    run()
+    #test_three_word_clue()
