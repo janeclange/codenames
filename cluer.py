@@ -51,6 +51,9 @@ class Cluer:
 		# print(self.clues[('nurse','ambulance')])
 
 	def generate_clues(self, word_tup):
+		#clues = self.g.get_k_word_clue(tuple(word_tup),self.g.guesser)
+		#return self.g.guesser.score_clues(word_tup, clues)[0][:5]
+		
 		if (tuple(word_tup) in self.clues) and self.clues[tuple(word_tup)] is not None:
 			if (self.clues[tuple(word_tup)][0]):
 				return self.clues[tuple(word_tup)]
@@ -58,6 +61,7 @@ class Cluer:
 				return [None]
 		else:
 			return [None]
+		
 
 	def evaluate_tup(self, word_tup, board, clue):
 		# print("evaluating tuple: ", word_tup)
