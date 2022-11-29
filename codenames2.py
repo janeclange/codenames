@@ -6,6 +6,7 @@ from random import sample
 # import gensim 
 import itertools
 from cluer import Cluer
+from cluer import Cluer2
 import random
 import time
 import csv
@@ -20,7 +21,7 @@ with open("codewords_simplified.txt") as f:
 with open("cm_wordlist.txt") as f: 
     clue_words = [x.strip() for x in f.readlines()]
 
-spymaster = Cluer()
+spymaster = Cluer2()
 spymaster.load_clues()
 
 #clue_sample = sample(clue_words, 1000)
@@ -88,6 +89,7 @@ try:
                     print("Bystander")
                     turn_done = True
             writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
+            record_csv.flush()
             guessed_words = []
             turns += 1
             print("Turns so far: " + str(turns))

@@ -2,8 +2,11 @@ import tqdm
 import pickle
 import numberbatch_guesser
 from conceptnet import ConceptNetGraph
+from conceptnet import powersetify
 from itertools import permutations
 import numpy as np
+import random
+
 
 class Cluer:
 	def lower(self, array):
@@ -63,11 +66,10 @@ class Cluer:
 			return [None]
 		
 
-	def evaluate_tup(self, word_tup, board, clue):
+	def evaluate_tup(self, word_tup, board, clue, trials=500):
 		# print("evaluating tuple: ", word_tup)
 		if clue == None:
 			return None
-		trials = 500
 		turn_counts = []
 		for i in range(trials):
 			#print(i, " out of ", trials)
@@ -89,6 +91,18 @@ class Cluer:
 			if intended_set == guess_set:
 				turns = 1 		# effective turns: 1
 				#print("Exact!")
+			elif self.assassin[0] in guess_set:
+				turns = 25
+			else:
+				good_score = len(guess_set.intersection(set(self.blue_words)))
+				if good_score == len(guess_set):
+					good_score -= .5
+				neutral_score = len(guess_set.intersection(set(self.bystanders)))
+				if neutral_score>0:
+					neutral_score -= 1
+				enemy_score = len(guess_set.intersection(set(self.red_words)))
+				turns = 1 - good_score + enemy_score + neutral_score
+			"""
 			elif len(guess_set.intersection(set(self.blue_words))) == 2:
 				#print("Two positive")
 				turns = 1.5 	# effective turns: slightly more than 1, because you might have messed up your partition
@@ -116,11 +130,12 @@ class Cluer:
 				print("Something went wrong...")
 				print(guess_set)
 			# turns -= 0.2 # make it slightly prefer 2-word clues
+			"""
 			turn_counts.append(turns)
 		avg_turns = np.average(turn_counts)
 		#print("raw score for ", word_tup, ": ", avg_turns)
-		if avg_turns >= 2:
-			avg_turns = 2 	# we should just give one word hints at that point
+		if avg_turns >= 0 and len(word_tup)>1:
+			avg_turns = 0 	# we should just give one word hints at that point
 		return avg_turns
 
 	def clue(self):
@@ -210,6 +225,45 @@ class Cluer:
 		# print(word_best_tup)
 		self.word_best_tup = word_best_tup[:n_target]
 		return (clue, n_target)
+
+
+class Cluer2(Cluer):
+
+	def generate_clues(self, word_tup):
+		clues = self.g.get_k_word_clue(tuple(word_tup),self.g.guesser)
+		return self.g.guesser.score_clues(word_tup, clues)[0][:10]
+	def clue(self):
+		board = self.blue_words + self.red_words + self.bystanders + self.assassin
+		board = [w for w in board if w not in self.previous_guesses]
+
+		remaining_blue_words = frozenset([w for w in self.blue_words if w not in self.previous_guesses])
+
+		partitions = [x for x in powersetify(remaining_blue_words) if len(x)>0]
+		best_clues = []
+		partition_scores = []
+		for p in tqdm.tqdm(partitions):
+			possible_clues = self.generate_clues(list(p))
+			clue_scores = []
+			for clue in possible_clues:
+				clue_scores.append(self.evaluate_tup(p, board, clue,trials=(500 if len(remaining_blue_words)<6 else 250)))
+			best_clues.append(possible_clues[np.argmin(clue_scores)])
+			partition_scores.append(np.min(clue_scores))
+		clue = best_clues[np.argmin(partition_scores)]
+		best_score = np.min(partition_scores)
+		target = partitions[np.argmin(partition_scores)]
+		if best_score >= 0:
+			#best we can do is give a one word clue.
+			target = [random.choice(list(remaining_blue_words))]
+			clue = self.generate_clues(target)[0]
+		self.word_best_tup = target
+		return (clue, len(target))
+
+
+
+
+
+
+
 if __name__=="__main__":
 	c = Cluer(assassin=["bell"], blue_words=["bridge","deck","pirate","jupiter"], red_words=["egypt","greece"],bystanders=["africa","air"])
 	c.load_clues()
