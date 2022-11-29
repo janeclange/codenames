@@ -3,8 +3,10 @@ import multiprocessing
 import os
 import pickle
 import random
+import json
 
 import numberbatch_guesser
+
 import time
 from functools import reduce
 import cachetools
@@ -37,12 +39,13 @@ class ConceptNetGraph:
                     continue
                 a = l[2].split("/")[3]
                 b = l[3].split("/")[3]
+                w = json.loads(l[4])["weight"]
                 if a not in self.edges:
                     self.edges[a] = []
                 if b not in self.edges:
                     self.edges[b] = []
-                self.edges[a] += [b]
-                self.edges[b] += [a]
+                self.edges[a] += [(b,w)]
+                self.edges[b] += [(a,w)]
         with open("conceptnet-assertions-en","wb") as f:
             pickle.dump(self, f)
 
@@ -59,7 +62,8 @@ class ConceptNetGraph:
         for i in range(k):
             l_temp = list(l.keys()).copy()
             for w in l_temp:
-                for neighbor in self.edges[w]:
+                for n in self.edges[w]:
+                    neighbor = n[0]
                     if neighbor in l:
                         continue
                     else:
