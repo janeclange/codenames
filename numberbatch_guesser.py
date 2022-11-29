@@ -48,7 +48,7 @@ class Guesser:
         self.words = np.array(valid_words)
         self.embedding = vecs[valid_inds]
 
-    def filter_valid_words(self, ws, endpoints):
+    def filter_valid_words(self, ws):
         # result = []
         # for w in ws:
         #     valid = True
@@ -74,7 +74,7 @@ class Guesser:
 
     def eval_inner_products(self, w1, w2):
         inner_prods = np.matmul(w1, w2.T).astype(np.float64)
-        inner_prods /= np.sqrt(np.outer(np.sum(w1**2, axis=1), np.sum(w2**2, axis=1)))
+        # inner_prods /= np.sqrt(np.outer(np.sum(w1**2, axis=1), np.sum(w2**2, axis=1)))
         return inner_prods
 
     def guess(self, clue, board, n):

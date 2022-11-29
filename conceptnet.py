@@ -70,7 +70,7 @@ class ConceptNetGraph:
         # possible_clues = set(word1_1).intersection(set(word2_2)).union(set(word1_2).intersection(set(word2_1)))
         word1_2 = self.guesser.filter_valid_words(list(self.get_distance_k_neighbors(word1,2).keys()))
         word2_2 = self.guesser.filter_valid_words(list(self.get_distance_k_neighbors(word2,2).keys()))
-        possible_clues_2 = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys())))
+        possible_clues_2 = set(word1_1).intersection(set(word2_2)).union(set(word1_2).intersection(set(word2_1)))
         possible_clues = possible_clues_1.union(possible_clues_2)
         return list(possible_clues)
         
