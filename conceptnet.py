@@ -227,7 +227,7 @@ def compute_all_two_word_clues():
                 w2 = w2.replace(" ","_").lower()
                 if w!=w2:
                     #print((w,w2),g.get_two_word_clue(w,w2))
-                    clues = g.get_two_word_clue(w,w2)
+                    clues = g.get_two_word_clue(w,w2, guesser)
                     #print([w,w2])
                     #print(clues)
                     clues = g.guesser.filter_valid_words(clues)
@@ -240,7 +240,7 @@ def test_three_word_clue():
     g = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
-    print(g.get_k_word_clue(["apple","game","pie"],guesser))
+    print(g.get_k_word_clue(frozenset(["apple","game","pie"]),guesser))
     print(g.get_two_word_clue("palm","glove",guesser))
 
 
