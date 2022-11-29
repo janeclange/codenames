@@ -24,8 +24,7 @@ class ConceptNetGraph:
 
     def __init__(self):
         self.edges = {} #dictionary of nodes -> list of edges
-
-
+        self.guesser = None
     def parse_graph(self):
         #read the file with all the edges in concept net, and put them in the dictionary
         with open("conceptnet-assertions-5.7.0.csv",encoding="utf8") as f:
@@ -47,14 +46,14 @@ class ConceptNetGraph:
                 self.edges[a] += [(b,w)]
                 self.edges[b] += [(a,w)]
         with open("conceptnet-assertions-en","wb") as f:
-            pickle.dump(self, f)
-
-    def load_graph():
+            pickle.dump(self.edges, f)
+    def load_graph(self):
         if "conceptnet-assertions-en" not in os.listdir():
             raise FileNotFoundError("You need to download the conceptnet assertions file from https://s3.amazonaws.com/conceptnet/downloads/2019/edges/conceptnet-assertions-5.7.0.csv.gz")
         with open("conceptnet-assertions-en","rb") as f:
-            return pickle.load(f)
-
+            g = pickle.load(f)
+            self.edges = g
+            self.guesser = numberbatch_guesser.Guesser()
     @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word, k : cachetools.keys.methodkey(self, word, k))
     def get_distance_k_neighbors(self, word, k):
         # return a dictionary where keys are distance k words, and values are lists that are the path to that word
@@ -68,7 +67,7 @@ class ConceptNetGraph:
                         continue
                     else:
                         degree = len(self.edges[neighbor])
-                        if degree>10 and degree<1000:
+                        if degree>10 and degree<5000:
                             l[neighbor] = l[w] + [(neighbor,degree)]
         return l
 
@@ -128,7 +127,6 @@ def eval_permutation(i, guesser, cluer, positive_words, negative_words, neutral_
         else:
             print("No valid clue found for words: ", list(i))
             return None
-
     # Get the guessed words
     guesser_rankings, _guesser_scores = guesser.guess(clue, list(positive_words) + list(negative_words) + list(
         negative_words) + list(assasin_words), clue_size)  # TODO weigh guesses based on clue.
@@ -232,9 +230,9 @@ def compute_all_two_word_clues():
                     clues = g.get_two_word_clue(w,w2)
                     #print([w,w2])
                     #print(clues)
-                    clues = guesser.filter_valid_words(clues)
+                    clues = g.guesser.filter_valid_words(clues)
                     if clues:
-                        scored_clues = guesser.score_clues([w,w2],clues)
+                        scored_clues = g.guesser.score_clues([w,w2],clues)
                         print((w,w2), scored_clues[0][:5])
                     else:
                         print((w,w2))

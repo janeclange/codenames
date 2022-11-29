@@ -4,7 +4,6 @@ from random import sample
 import itertools
 from cluer import Cluer
 import random
-from conceptnet import ConceptNetGraph
 
 def lower(array):
     return [a.lower() for a in array]
