@@ -51,7 +51,6 @@ while(True):
 
 
         while not done:
-            try:
             clue_tup = spymaster.clue()
             target_words = spymaster.word_best_tup
             print("Clue: ", clue_tup)
