@@ -28,8 +28,8 @@ os.makedirs(f"logs/{getpass.getuser()}", exist_ok=True)
 record_csv = open(f'logs/{getpass.getuser()}/codenames2_record_{int(time.time())}.csv', 'w')
 writer = csv.writer(record_csv)
 
-while(True):
-    try:
+try:
+    while(True):
         board_words = lower(sample(codewords, k=25))
         assassin = lower([board_words[0]])
         red_words = lower(board_words[1:10])
@@ -96,5 +96,5 @@ while(True):
         print("Turns: " + str(turns))
         print("True board:")
         print([assassin, red_words, blue_words, bystanders])
-    finally:
-        record_csv.close()
+finally:
+    record_csv.close()
