@@ -13,13 +13,13 @@ import getpass
 def lower(array):
     return [a.lower() for a in array]
 
+with open("codewords_simplified.txt") as f:
+    codewords = [x.strip() for x in f.readlines()]
+
+with open("cm_wordlist.txt") as f:
+    clue_words = [x.strip() for x in f.readlines()]
+
 if __name__ == "__main__":
-
-    with open("codewords_simplified.txt") as f:
-        codewords = [x.strip() for x in f.readlines()]
-
-    with open("cm_wordlist.txt") as f:
-        clue_words = [x.strip() for x in f.readlines()]
 
     spymaster = Cluer()
     spymaster.load_clues()
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
             while not done:
                 clue_tup = spymaster.clue()
-                target_words = spymaster.word_best_tup
+                # target_words = spymaster.word_best_tup
                 print("Clue: ", clue_tup)
                 n_target = clue_tup[1]
                 turn_done = False
@@ -88,7 +88,7 @@ if __name__ == "__main__":
                     if guess in bystanders:
                         print("Bystander")
                         turn_done = True
-                writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
+                # writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
                 guessed_words = []
                 turns += 1
                 print("Turns so far: " + str(turns))
