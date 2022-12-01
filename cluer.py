@@ -20,7 +20,6 @@ class Cluer:
 
 		self.assassin, self.red_words, self.blue_words, self.bystanders = self.lower(assassin), self.lower(red_words), self.lower(blue_words), self.lower(bystanders)
 		self.previous_guesses = []
-		self.ally_words_remaining = 8
 	def precompute(self):
 		self.clues = {}
 
@@ -245,7 +244,7 @@ class Cluer2(Cluer):
 			possible_clues = self.generate_clues(list(p))
 			clue_scores = []
 			for clue in possible_clues:
-				clue_scores.append(self.evaluate_tup(p, board, clue,trials=(500 if len(remaining_blue_words)<6 else 250)))
+				clue_scores.append(self.evaluate_tup(p, board, clue,trials=(50 if len(remaining_blue_words)<6 else 25)))
 			best_clues.append(possible_clues[np.argmin(clue_scores)])
 			partition_scores.append(np.min(clue_scores))
 		clue = best_clues[np.argmin(partition_scores)]

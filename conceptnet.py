@@ -68,7 +68,7 @@ class ConceptNetGraph:
                     else:
                         degree = len(self.edges[neighbor])
                         if degree>10 and degree<5000:
-                            l[neighbor] = l[w] + [(neighbor,degree)]
+                            l[neighbor] = l[w] + [(neighbor,n[1])]
         return l
 
     @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2, guesser : cachetools.keys.methodkey(self, word1, word2))
@@ -237,13 +237,15 @@ def compute_all_two_word_clues():
                     else:
                         print((w,w2))
 def test_three_word_clue():
-    g = ConceptNetGraph.load_graph()
+    g = ConceptNetGraph()
+    g.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
-    print(g.get_k_word_clue(frozenset(["apple","game","pie"]),guesser))
-    print(g.get_two_word_clue("palm","glove",guesser))
+    print(g.get_k_word_clue(tuple(["scientist","rome","part","trip","honey"]),guesser,verbose=True))
+    #print(g.get_k_word_clue(frozenset(["apple","game","pie"]),guesser))
+    #print(g.get_two_word_clue("palm","glove",guesser))
 
 
 if __name__ == "__main__":
-    run()
-    #test_three_word_clue()
+    #run()
+    test_three_word_clue()
