@@ -1,5 +1,6 @@
 from codenames2 import *
 import numpy as np
+import tqdm
 
 def guesser(words, clue, n):
     pass
@@ -12,7 +13,7 @@ def cluer(positive, negative, neutral, assassin):
 def eval(guesser, cluer, expirements=25):
     turns_per_game = 0
     games = 0
-    for i in range(expirements):
+    for i in tqdm.tqdm(range(expirements)):
         board_words = lower(sample(codewords, k=25))
         assassin = lower([board_words[0]])
         red_words = lower(board_words[1:10])
