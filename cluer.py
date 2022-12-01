@@ -203,7 +203,7 @@ class Cluer:
 			n_target = 1
 		# print(best_partition)
 		# print(best_tup)
-		# print(word_best_tup)
+		self.word_best_tup = word_best_tup
 		return (clue, n_target)
 if __name__=="__main__":
 	c = Cluer(assassin=["bell"], blue_words=["bridge","deck","pirate","jupiter"], red_words=["egypt","greece"],bystanders=["africa","air"])
