@@ -159,7 +159,7 @@ class Cluer:
 			elif self.assassin[0] in guess_set:
 				turns = 25
 			else:
-				# # simulate user guessing
+				# simulate user guessing
 				# score = 1
 				# done = False
 				# while (i < len(guesses)) and (not done):
@@ -354,19 +354,19 @@ class Cluer2(Cluer):
 				best_clues.append(None)
 				partition_scores.append(np.Inf)
 		# print(partition_scores)
-			for clue in possible_clues:
-				clue_scores.append(self.evaluate_tup(p, board, clue,trials=(50 if len(remaining_blue_words)<6 else 25)))
-			best_clues.append(possible_clues[np.argmin(clue_scores)])
-			partition_scores.append(np.min(clue_scores))
-		# clue = best_clues[np.argmin(partition_scores)]
-		# best_score = np.min(partition_scores)
-		# target = partitions[np.argmin(partition_scores)]
-		# if best_score >= 0:
-		# 	#best we can do is give a one word clue.
-		# 	target = [random.choice(list(remaining_blue_words))]
-		# 	clue = self.generate_clues(target)[0]
-		# self.word_best_tup = target
-		# return (clue, len(target))
+			# for clue in possible_clues:
+			# 	clue_scores.append(self.evaluate_tup_greedy(p, board, clue,trials=(50 if len(remaining_blue_words)<6 else 25)))
+			# best_clues.append(possible_clues[np.argmin(clue_scores)])
+			# partition_scores.append(np.min(clue_scores))
+		clue = best_clues[np.argmin(partition_scores)]
+		best_score = np.min(partition_scores)
+		target = partitions[np.argmin(partition_scores)]
+		if best_score >= 0:
+			#best we can do is give a one word clue.
+			target = [random.choice(list(remaining_blue_words))]
+			clue = self.generate_clues(target)[0]
+		self.word_best_tup = target
+		return (clue, len(target))
 	def clue(self):
 		board = self.blue_words + self.red_words + self.bystanders + self.assassin
 		board = [w for w in board if w not in self.previous_guesses]

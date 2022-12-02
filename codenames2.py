@@ -60,34 +60,33 @@ if __name__ == "__main__":
                 guessed_words = []
                 while not turn_done:
                     guess = ""
-                    while guess not in board_words:
+                    while guess not in board_words or guess in spymaster.previous_guesses:
                         guess = input()
 
-                        spymaster.previous_guesses.append(guess.lower())
-                        guessed_words.append(guess.lower())
-                        print(spymaster.previous_guesses)
-                        # guesser.previous_guesses.append(guess)
-                        if guess in assassin:
-                            print("Assassin")
+                    spymaster.previous_guesses.append(guess.lower())
+                    guessed_words.append(guess.lower())
+                    print(spymaster.previous_guesses)
+                    if guess in assassin:
+                        print("Assassin")
+                        turn_done = True
+                        done = True
+                        turns += 25
+                    if guess in red_words:
+                        print("Red")
+                        turns += 1
+                        turn_done = True
+                    if guess in blue_words:
+                        print("Blue")
+                        n_target -= 1
+                        # guesser.ally_words_remaining -= 1
+                        if n_target == 0:
                             turn_done = True
+                        n_ally_words_left = len(spymaster.blue_words) - len(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)))
+                        if n_ally_words_left == 0:
                             done = True
-                            turns += 25
-                        if guess in red_words:
-                            print("Red")
-                            turns += 1
-                            turn_done = True
-                        if guess in blue_words:
-                            print("Blue")
-                            n_target -= 1
-                            # guesser.ally_words_remaining -= 1
-                            if n_target == 0:
-                                turn_done = True
-                            n_ally_words_left = len(spymaster.blue_words) - len(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)))
-                            if n_ally_words_left == 0:
-                                done = True
-                        if guess in bystanders:
-                            print("Bystander")
-                            turn_done = True
+                    if guess in bystanders:
+                        print("Bystander")
+                        turn_done = True
                 writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
                 guessed_words = []
                 turns += 1
