@@ -240,7 +240,7 @@ class Cluer:
 		partition_turn_counts = []
 
 		# for each partition, for each pair/singleton in the partition, compute the behaviour of the guesser using 100(?) random trials
-		for i in range(len(partitions)):
+		for i in tqdm.tqdm(list(range(len(partitions)))):
 			# print(i, " out of ", len(partitions), "partitions")
 			partition = partitions[i]
 			total_turns = 0
