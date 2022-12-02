@@ -254,7 +254,10 @@ class Cluer:
 					continue
 				clue_scores = []
 				for i in range(len(clues)):
-					clue_scores.append(self.evaluate_tup(word_tup, board, clues[i]))
+					if clues[i] in self.previous_clues:
+						clue_scores.append(np.Inf)
+					else:
+						clue_scores.append(self.evaluate_tup(word_tup, board, clues[i]))
 					# print("current clue", clues[i])
 				tup_score = np.min(clue_scores)
 				total_turns += tup_score
@@ -277,7 +280,10 @@ class Cluer:
 				continue
 			clue_scores = []
 			for i in range(len(clues)):
-				clue_scores.append(self.evaluate_tup(word_tup, board, clues[i]))
+				if clues[i] in self.previous_clues:
+					clue_scores.append(np.Inf)
+				else:
+					clue_scores.append(self.evaluate_tup(word_tup, board, clues[i]))
 				# print("current clue", clues[i])
 			# print("clue scores", clue_scores)
 			tup_score = np.min(clue_scores)
