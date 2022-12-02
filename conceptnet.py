@@ -68,7 +68,7 @@ class ConceptNetGraph:
                     else:
                         degree = len(self.edges[neighbor])
                         if degree>10 and degree<5000:
-                            l[neighbor] = l[w] + [(neighbor,degree)]
+                            l[neighbor] = l[w] + [(neighbor,n[1])]
         return l
 
     @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2, guesser : cachetools.keys.methodkey(self, word1, word2))
