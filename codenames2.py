@@ -55,6 +55,7 @@ try:
             clue_tup = spymaster.clue()
             target_words = spymaster.word_best_tup
             print("Clue: ", clue_tup)
+            spymaster.previous_clues.append(clue_tup[0])
             n_target = clue_tup[1]
             turn_done = False
             guessed_words = []
