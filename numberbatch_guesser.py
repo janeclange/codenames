@@ -1,7 +1,6 @@
 import tqdm
 import pickle
 import numpy as np
-import h5py
 import pandas as pd
 
 # download this file:

@@ -72,19 +72,20 @@ class ConceptNetGraph:
         return l
 
     @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2, guesser : cachetools.keys.methodkey(self, word1, word2))
-    def get_two_word_clue(self, word1: str, word2: str, guesser):
+    def get_two_word_clues(self, word1: str, word2: str, guesser):
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
-        possible_clues = set(word1_1.keys()).intersection(set(word2_1.keys())) - {word1, word2}
-        possible_clues = guesser.filter_valid_words(list(possible_clues))
-        if possible_clues:
-            return guesser.score_clues([word1,word2],possible_clues)[0]
+        possible_clues_1 = set(word1_1.keys()).intersection(set(word2_1.keys())) - {word1, word2}
+        possible_clues_1 = guesser.filter_valid_words(list(possible_clues_1))
+        # if possible_clues:
+        #     return guesser.score_clues([word1,word2],possible_clues)[0]
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
-        possible_clues = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys()))) - set([word1,word2])
-        possible_clues = guesser.filter_valid_words(list(possible_clues))
-        if possible_clues:
-            return guesser.score_clues([word1,word2], possible_clues)[0]
+        possible_clues_2 = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys()))) - set([word1,word2])
+        possible_clues_2 = guesser.filter_valid_words(list(possible_clues_2))
+        possible_clues = set(possible_clues_1).union(set(possible_clues_2))
+        if len(possible_clues) > 0:
+            return list(possible_clues)
         else:
             return []
 
@@ -100,7 +101,7 @@ class ConceptNetGraph:
         if verbose:
             print([([v[w] for v in neighbors_2],w) for (x,w) in possible_clues])
             print(possible_clues)
-        return [w for (x,w) in possible_clues]
+        return possible_clues
         
 # Helper for Cluer Plus
 @cachetools.cached(cache={}, key=lambda i, guesser, cluer, pos, neg, neu, ass, num_moves : cachetools.keys.hashkey(i, pos, neg, neu, ass, num_moves))
@@ -206,6 +207,8 @@ def play_simulation(guesser, cluer, verbose = False, use_multi=True):
     return cluer_plus(guesser, cluer, positive_words, negative_words, neutral_words, assasin_words, use_multi=use_multi)
 
 def run():
+    # c = ConceptNetGraph()
+    # c.parse_graph()
     cluer = ConceptNetGraph.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
@@ -241,11 +244,12 @@ def test_three_word_clue():
     g.load_graph()
     guesser = numberbatch_guesser.Guesser()
     guesser.load_data()
-    print(g.get_k_word_clue(tuple(["scientist","rome","part","trip","honey"]),guesser,verbose=True))
-    #print(g.get_k_word_clue(frozenset(["apple","game","pie"]),guesser))
-    #print(g.get_two_word_clue("palm","glove",guesser))
+    print(g.get_k_word_clue(frozenset(["apple","game","pie","juice","jupiter"]),guesser,verbose=True))
+    print(g.get_two_word_clue("palm","glove",guesser))
 
 
 if __name__ == "__main__":
-    #run()
+    # run()
     test_three_word_clue()
+    # g = ConceptNetGraph()
+    # g.parse_graph()

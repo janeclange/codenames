@@ -30,8 +30,8 @@ if __name__ == "__main__":
     record_csv = open(f'logs/{getpass.getuser()}/codenames2_record_{int(time.time())}.csv', 'w')
     writer = csv.writer(record_csv)
 
-    while(True):
-        try:
+    try:
+        while(True):
             board_words = lower(sample(codewords, k=25))
             assassin = lower([board_words[0]])
             red_words = lower(board_words[1:10])
@@ -50,24 +50,22 @@ if __name__ == "__main__":
 
             done = False
             turns = 0
-
-
             while not done:
                 clue_tup = spymaster.clue()
-                # target_words = spymaster.word_best_tup
+                target_words = spymaster.word_best_tup
                 print("Clue: ", clue_tup)
+                spymaster.previous_clues.append(clue_tup[0])
                 n_target = clue_tup[1]
                 turn_done = False
                 guessed_words = []
                 while not turn_done:
                     guess = ""
-                    while not guess in board_words or guess in spymaster.previous_guesses:
+                    while guess not in board_words or guess in spymaster.previous_guesses:
                         guess = input()
 
                     spymaster.previous_guesses.append(guess.lower())
                     guessed_words.append(guess.lower())
                     print(spymaster.previous_guesses)
-                    # guesser.previous_guesses.append(guess)
                     if guess in assassin:
                         print("Assassin")
                         turn_done = True
@@ -89,7 +87,7 @@ if __name__ == "__main__":
                     if guess in bystanders:
                         print("Bystander")
                         turn_done = True
-                # writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
+                writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
                 guessed_words = []
                 turns += 1
                 print("Turns so far: " + str(turns))
@@ -98,5 +96,5 @@ if __name__ == "__main__":
             print("Turns: " + str(turns))
             print("True board:")
             print([assassin, red_words, blue_words, bystanders])
-        finally:
-            record_csv.close()
+    finally:
+        record_csv.close()
