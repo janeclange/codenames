@@ -45,8 +45,8 @@ class Agent:
         for w in clue_sample:
             similarities = []
             for v in board_words:
-                similarities.append(word2vec.get_word_similarity(w,v), v)
-            similarities.sort()
+                similarities.append([word2vec.get_word_similarity(w,v), v])
+            similarities.sort(key=lambda x: x[0])
             rankings[w] = similarities
 
         max_targets = 0
@@ -100,6 +100,7 @@ class Agent:
         pass
 
     def combined_scorer(self, assassin, red_words, blue_words, bystanders, model):
+        pass
         
 
 

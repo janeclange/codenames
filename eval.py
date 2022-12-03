@@ -10,7 +10,7 @@ def cluer(positive, negative, neutral, assassin):
     pass
 #   return str, int
 
-def eval(guesser, cluer, expirements=25):
+def eval(cluer, guesser, expirements=25):
     turns_per_game = 0
     games = 0
     for i in tqdm.tqdm(range(expirements)):
@@ -34,11 +34,10 @@ def eval(guesser, cluer, expirements=25):
             while not turn_done:
                 guess = ""
                 while not guess in board_words:
-                    guess = guesser(board_words, clue, n_target)
+                    guess = guesser(board_words, clue, n_target).lower()
 
-                guessed_words.append(guess.lower())
-                board_words.remove(lower([guess]))
-                print(spymaster.previous_guesses)
+                guessed_words.append(guess)
+                board_words.remove(guess)
                 if guess in assassin:
                     turn_done = True
                     done = True
@@ -46,20 +45,20 @@ def eval(guesser, cluer, expirements=25):
                 if guess in red_words:
                     turns += 1
                     turn_done = True
-                    red_words.remove(lower([guess]))
+                    red_words.remove(guess)
                 if guess in blue_words:
                     n_target -= 1
                     # guesser.ally_words_remaining -= 1
                     if n_target == 0:
                         turn_done = True
-                    blue_words.remove(lower([guess]))
+                    blue_words.remove(guess)
                     n_ally_words_left = len(blue_words)
                     if n_ally_words_left == 0:
                         done = True
                 if guess in bystanders:
                     turn_done = True
-                    bystanders.remove(lower([guess]))
-            writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
+                    bystanders.remove(guess)
+            # writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
             turns += 1
         turns_per_game += turns
         games += 1
@@ -68,12 +67,18 @@ def eval(guesser, cluer, expirements=25):
 
 
 def get_adversary_cluer(embedding_type="word2vec"):
-    from codenames import codenames
+    from codenames_adversary import codenames
     game = codenames.Codenames(embedding_type)
     def clue(positive, negative, neutral, assassin):
         game._build_game(red=negative, blue=positive)
         best_scores, best_clues, best_board_words_for_clue = game.get_clue(2, 1)
-        return best_clues[0], 2
+        z = list(zip(best_scores, best_clues, best_board_words_for_clue))
+        if len(z) == 0:
+            z = [(0, ["glove"], ["unk-eliot", "unk-eliot"])]
+        best = min(z, key=lambda x: x[0])
+        best_word = best[1]
+        # import IPython; IPython.embed()
+        return best_word[0], len(best[2])
 
     return clue
 
@@ -88,17 +93,18 @@ def get_guesser(embedding="word2vec"):
     return guesser
 
 def our_cluer():
-    spymaster = Cluer()
+    spymaster = Cluer2()
     def cluer(positive, negative, neutral, assassin):
-        spymaster.assassin, spymaster.red_words, spymaster.blue_words, spymaster.bystanders = spymaster.lower(
-            assassin), spymaster.lower(negative), spymaster.lower(positive), spymaster.lower(neutral)
+        spymaster.assassin, spymaster.red_words, spymaster.blue_words, spymaster.bystanders = spymaster.lower(assassin), spymaster.lower(negative), spymaster.lower(positive), spymaster.lower(neutral)
         return spymaster.clue()
 
     return cluer
 
 if __name__ == "__main__":
-    print(eval(our_cluer(), get_guesser()))
-    print(get_adversary_cluer(), get_guesser())
+    result = eval(get_adversary_cluer(), get_guesser())
+    result2 = eval(our_cluer(), get_guesser())
+    print(result, result2)
+
 
 
 
