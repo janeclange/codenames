@@ -250,11 +250,14 @@ class Cluer:
 		partitions = np.unique(p, axis=0)
 
 		partition_turn_counts = []
+		partition_best_clue = []
 
 		# for each partition, for each pair/singleton in the partition, compute the behaviour of the guesser using 100(?) random trials
 		for i in tqdm.tqdm(list(range(len(partitions)))):
 			# print(i, " out of ", len(partitions), "partitions")
 			partition = partitions[i]
+			this_partition_clue_scores = []
+			this_partition_clues = []
 			total_turns = 0
 			for tup in partition:
 				tup = [ind for ind in tup if ind != -1]
@@ -276,10 +279,30 @@ class Cluer:
 						clue_scores.append(self.evaluate_tup(word_tup, board, clues[i]))
 					# print("current clue", clues[i])
 				tup_score = np.min(clue_scores)
+				this_partition_clue_scores.append(tup_score)
+				this_partition_clues.append(clues[np.argmin(clue_scores)])
 				total_turns += tup_score
 			partition_turn_counts.append(total_turns)
+			ix = np.argmin(this_partition_clue_scores)
+			partition_best_clue.append((this_partition_clue_scores[ix], [remaining_blue_words[t] for t in partition[ix] if t!=-1], this_partition_clues[ix]))
 		# use the partition with the lowest turn count (unless it really sucks, then we should hint singletons instead)
-		best_partition = partitions[np.argmin(partition_turn_counts)]
+
+		best_partition_ix = np.argmin(partition_turn_counts)
+		best_partition_score = partition_turn_counts[best_partition_ix]
+		if best_partition_score >= len(remaining_blue_words):
+			self.word_best_tup = [random.choice(remaining_blue_words)]
+			clue = self.generate_clues(self.word_best_tup)[0]
+			n_target = 1
+		else:
+			n_target = 2
+			clue = partition_best_clue[best_partition_ix][2]
+			self.word_best_tup = partition_best_clue[best_partition_ix][1]
+		return (clue,n_target)
+		#everything below here is old and should be remomved once the above works.
+
+
+
+
 		# calculate the best clue in this partition
 		tup_scores = []
 		best_clues = []
