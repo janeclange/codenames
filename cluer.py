@@ -9,8 +9,6 @@ import random
 
 
 class Cluer:
-	def lower(self, array):
-		return [a.lower() for a in array]
 	def __init__(self, assassin = [], red_words = [], blue_words = [], bystanders = []):
 		self.g = ConceptNetGraph()
 		self.g.load_graph()
@@ -54,9 +52,20 @@ class Cluer:
 		self.clues = cl
 		# print(self.clues[('nurse','ambulance')])
 
+	def generate_clues(self, word_tup):
+		clues = self.g.get_k_word_clue(tuple(word_tup))
+		if (len(word_tup) == 2):
+			clues = [w for (x,w) in clues if x <=3]
+		else:
+			clues = [w for (x,w) in clues]
+		return self.g.guesser.score_clues(word_tup, clues)[0][:10]
+
+	def lower(self, array):
+		return [a.lower() for a in array]
+
 	def generate_clues_partition(self, word_tup):
 		if len(word_tup) == 2:
-			clues = self.g.get_two_word_clues(word_tup[0], word_tup[1],self.g.guesser)
+			clues = self.g.get_two_word_clues(word_tup[0], word_tup[1])
 			return self.g.guesser.score_clues(word_tup, clues)[0][:5]
 		elif len(word_tup) == 1:
 			return []
@@ -75,11 +84,12 @@ class Cluer:
 		if clue == None:
 			return None
 		turn_counts = []
+		board_words_ordered, inner_prods = self.g.guesser.guess(clue, board, len(board))
 		for i in range(trials):
 			#print(i, " out of ", trials)
 			#print(tuple(word_tup))
 			#print("clue", clue)
-			board_words_ordered, inner_prods = self.g.guesser.guess(clue, board, len(board))
+			
 			noise = np.random.normal(0,0.05,size=(len(board)))
 			scores = np.array(inner_prods) + np.array(noise)
 			#print("board", board_words_ordered)
@@ -136,11 +146,12 @@ class Cluer:
 		if clue == None:
 			return None
 		turn_counts = []
+		board_words_ordered, inner_prods = self.g.guesser.guess(clue, board, len(board))
 		for i in range(trials):
 			#print(i, " out of ", trials)
 			#print(tuple(word_tup))
 			#print("clue", clue)
-			board_words_ordered, inner_prods = self.g.guesser.guess(clue, board, len(board))
+			
 			noise = np.random.normal(0,0.05,size=(len(board)))
 			scores = np.array(inner_prods) + np.array(noise)
 			#print("board", board_words_ordered)
@@ -299,7 +310,9 @@ class Cluer:
 			clue = best_clue # use pair clue only if it exists and doesn't suck
 			n_target = 2
 		else:
-			clue = word_best_tup[0]
+			#clue = word_best_tup[0]
+			clue = self.generate_clues(frozenset([word_best_tup[0]]))[0]
+
 			n_target = 1
 		# if (tuple(word_best_tup) in self.clues):
 		# 	if (self.clues[tuple(word_best_tup)][0]) and (np.min(tup_scores) < 2): # use pair clue only if it exists and doesn't suck
@@ -320,13 +333,7 @@ class Cluer:
 
 class Cluer2(Cluer):
 
-	def generate_clues(self, word_tup):
-		clues = self.g.get_k_word_clue(tuple(word_tup),self.g.guesser)
-		if (len(word_tup) == 2):
-			clues = [w for (x,w) in clues if x <=3]
-		else:
-			clues = [w for (x,w) in clues]
-		return self.g.guesser.score_clues(word_tup, clues)[0][:10]
+
 	def clue_greedy(self):
 		board = self.blue_words + self.red_words + self.bystanders + self.assassin
 		board = [w for w in board if w not in self.previous_guesses]

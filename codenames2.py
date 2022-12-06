@@ -61,6 +61,7 @@ if __name__ == "__main__":
                 while not turn_done:
                     guess = ""
                     while guess not in board_words or guess in spymaster.previous_guesses:
+                        print("Enter a word on the board that hasn't been previously guessed:")
                         guess = input()
 
                     spymaster.previous_guesses.append(guess.lower())

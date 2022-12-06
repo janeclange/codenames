@@ -93,8 +93,14 @@ class ConceptNetGraph:
     def get_k_word_clue(self, words, verbose=False):
         neighbors_2 = [self.get_distance_k_neighbors(w,2) for w in words]
         all_intersections = lambda x:set(x[0].keys()).intersection(all_intersections(x[1:])) if len(x)>1 else set(x[0].keys())
+        
         all_size_2_intersections = all_intersections(neighbors_2) - set(words)
+        
+        is_allowed = lambda w: all(word not in w and w not in word for word in words)
+
         possible_clues = self.guesser.filter_valid_words(list(all_size_2_intersections))
+        possible_clues = [w for w in possible_clues if is_allowed(w)]
+
         if verbose:
             print(possible_clues)
         possible_clues = sorted([(sum(len(v[w]) for v in neighbors_2),w) for w in possible_clues])
