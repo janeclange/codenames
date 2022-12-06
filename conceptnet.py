@@ -72,6 +72,7 @@ class ConceptNetGraph:
                             l[neighbor] = l[w] + [(neighbor,n[1])]
         return l
 
+
     @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word, k : cachetools.keys.methodkey(self, word, k))
     def get_weighted_distance_k_neighbors(self, word, k):
         # return a dictionary where keys are distance k words, and values are lists that are the path to that word

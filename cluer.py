@@ -30,6 +30,7 @@ class Cluer:
 		self.assassin, self.red_words, self.blue_words, self.bystanders = lower(assassin), lower(red_words), lower(blue_words), lower(bystanders)
 		self.previous_guesses = []
 		self.previous_clues = []
+		self.previous_clues_output = []
 		self.ally_words_remaining = 8
 
 	def precompute(self):
@@ -151,7 +152,7 @@ class Cluer:
 			#print(tuple(word_tup))
 			#print("clue", clue)
 			
-			noise = np.random.normal(0,0.05,size=(len(board)))
+			noise = np.random.normal(0, 0.1, size=(len(board)))
 			scores = np.array(inner_prods) + np.array(noise)
 			#print("board", board_words_ordered)
 			#print("scores", scores)
@@ -169,27 +170,28 @@ class Cluer:
 			elif self.assassin[0] in guess_set:
 				turns = 25
 			else:
-				# simulate user guessing
-				# score = 1
-				# done = False
-				# while (i < len(guesses)) and (not done):
-				# 	if guesses[i] in self.blue_words:
-				# 		score -= 1
-				# 	elif guesses[i] in self.bystanders:
-				# 		done = True
-				# 	elif guesses[i] in self.red_words:
-				# 		score += 1
-				# 		done = True
-				# 	i += 1
-				# turns = score
-				good_score = len(guess_set.intersection(set(self.blue_words)))
-				if good_score == len(guess_set):
-					good_score -= .5
-				neutral_score = len(guess_set.intersection(set(self.bystanders)))
-				# if neutral_score>0:
-				# 	neutral_score -= 1
-				enemy_score = len(guess_set.intersection(set(self.red_words)))
-				turns = 1 - good_score + 2*enemy_score
+				#simulate user guessing
+				score = 1
+				done = False
+				while (i < len(guesses)) and (not done):
+					if guesses[i] in self.blue_words:
+						score -= 1
+					elif guesses[i] in self.bystanders:
+						#score += 0.5
+						done = True
+					elif guesses[i] in self.red_words:
+						score += 1
+						done = True
+					i += 1
+				turns = score
+				# good_score = len(guess_set.intersection(set(self.blue_words)))
+				# if good_score == len(guess_set):
+				# 	good_score -= .5
+				# neutral_score = len(guess_set.intersection(set(self.bystanders)))
+				# # if neutral_score>0:
+				# # 	neutral_score -= 1
+				# enemy_score = len(guess_set.intersection(set(self.red_words)))
+				# turns = 1 - good_score + 2*enemy_score
 			"""
 			elif len(guess_set.intersection(set(self.blue_words))) == 2:
 				#print("Two positive")
@@ -377,7 +379,9 @@ class Cluer2(Cluer):
 			target = [random.choice(list(remaining_blue_words))]
 			clue = self.generate_clues(target)[0]
 		self.word_best_tup = target
+
 		return (clue, len(target))
+
 	def clue(self):
 		board = self.blue_words + self.red_words + self.bystanders + self.assassin
 		board = [w for w in board if w not in self.previous_guesses]
@@ -385,13 +389,14 @@ class Cluer2(Cluer):
 		remaining_blue_words = frozenset([w for w in self.blue_words if w not in self.previous_guesses])
 
 
-		if (len(remaining_blue_words) > len(self.blue_words)):
-			return self.clue_greedy()
+		#if (len(remaining_blue_words) >= len(self.blue_words)):
+		if (len(remaining_blue_words) >= 0):
+			clue = self.clue_greedy()
+			#print (clue, self.word_best_tup)
+			if clue[1] > 2: 
+				return clue 
+			return self.clue_partitions()
 		else:
-			global USE_GRAPH_GLOVE
-			#USE_GRAPH_GLOVE = True
-			#self.clue_partitions()
-			#USE_GRAPH_GLOVE = False
 			return self.clue_partitions()
 
 

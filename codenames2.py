@@ -45,6 +45,8 @@ if __name__ == "__main__":
             spymaster.blue_words = blue_words
             spymaster.bystanders = bystanders
             spymaster.previous_guesses = []
+            spymaster.previous_clues = []
+            spymaster.previous_clues_output = []
 
             #print([assassin, red_words, blue_words, bystanders])
             random.shuffle(board_words)
@@ -57,6 +59,7 @@ if __name__ == "__main__":
                 target_words = spymaster.word_best_tup
                 print("Clue: ", clue_tup)
                 spymaster.previous_clues.append(clue_tup[0])
+                spymaster.previous_clues_output.append(target_words)
                 n_target = clue_tup[1]
                 turn_done = False
                 guessed_words = []
@@ -99,5 +102,7 @@ if __name__ == "__main__":
             print("Turns: " + str(turns))
             print("True board:")
             print([assassin, red_words, blue_words, bystanders])
+            print("Intended clues:")
+            print(spymaster.previous_clues_output)
     finally:
         record_csv.close()
