@@ -71,30 +71,30 @@ class ConceptNetGraph:
                             l[neighbor] = l[w] + [(neighbor,n[1])]
         return l
 
-    @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2, guesser : cachetools.keys.methodkey(self, word1, word2))
-    def get_two_word_clues(self, word1: str, word2: str, guesser):
+    @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2 : cachetools.keys.methodkey(self, word1, word2))
+    def get_two_word_clues(self, word1: str, word2: str):
         word1_1 = self.get_distance_k_neighbors(word1,1)
         word2_1 = self.get_distance_k_neighbors(word2,1)
         possible_clues_1 = set(word1_1.keys()).intersection(set(word2_1.keys())) - {word1, word2}
-        possible_clues_1 = guesser.filter_valid_words(list(possible_clues_1))
+        possible_clues_1 = self.guesser.filter_valid_words(list(possible_clues_1))
         # if possible_clues:
-        #     return guesser.score_clues([word1,word2],possible_clues)[0]
+        #     return self.guesser.score_clues([word1,word2],possible_clues)[0]
         word1_2 = self.get_distance_k_neighbors(word1,2)
         word2_2 = self.get_distance_k_neighbors(word2,2)
         possible_clues_2 = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys()))) - set([word1,word2])
-        possible_clues_2 = guesser.filter_valid_words(list(possible_clues_2))
+        possible_clues_2 = self.guesser.filter_valid_words(list(possible_clues_2))
         possible_clues = set(possible_clues_1).union(set(possible_clues_2))
         if len(possible_clues) > 0:
             return list(possible_clues)
         else:
             return []
 
-    @cachetools.cachedmethod(lambda self: self.cache, key=lambda self, words, guesser, verbose=False: cachetools.keys.methodkey(self, words))
-    def get_k_word_clue(self, words, guesser, verbose=False):
+    @cachetools.cachedmethod(lambda self: self.cache, key=lambda self, words, verbose=False: cachetools.keys.methodkey(self, words))
+    def get_k_word_clue(self, words, verbose=False):
         neighbors_2 = [self.get_distance_k_neighbors(w,2) for w in words]
         all_intersections = lambda x:set(x[0].keys()).intersection(all_intersections(x[1:])) if len(x)>1 else set(x[0].keys())
         all_size_2_intersections = all_intersections(neighbors_2) - set(words)
-        possible_clues = guesser.filter_valid_words(list(all_size_2_intersections))
+        possible_clues = self.guesser.filter_valid_words(list(all_size_2_intersections))
         if verbose:
             print(possible_clues)
         possible_clues = sorted([(sum(len(v[w]) for v in neighbors_2),w) for w in possible_clues])
