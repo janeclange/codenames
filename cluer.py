@@ -9,21 +9,21 @@ import random
 import graphglove
 
 
-USE_GRAPH_GLOVE = True
 lower = lambda l:[x.lower() for x in l]
 class Cluer:
-	def __init__(self):
+	def __init__(self, use_graph_glove=False):
 		self.g = ConceptNetGraph()
 		self.g.load_graph()
 		self.g.guesser.load_data()
 		self.clues = None
+		self.use_graph_glove = use_graph_glove
 
-		if USE_GRAPH_GLOVE:
+		if self.use_graph_glove:
 			print("loading graphglove")
 			self.graphglove = graphglove.GraphGlove()
 	def new_game(self, assassin = [], red_words = [], blue_words = [], bystanders = []):
 
-		if USE_GRAPH_GLOVE:
+		if self.use_graph_glove:
 			print("precompting distances for graphglove")
 			self.graphglove.precompute_pairwise_dist(blue_words)
 
@@ -67,28 +67,16 @@ class Cluer:
 	def generate_clues(self, word_tup):
 		clues = self.g.get_k_word_clue(tuple(word_tup))
 		if (len(word_tup) == 2):
+			#print(clues)
 			clues = [w for (x,w) in clues if x <=3]
 		else:
 			clues = [w for (x,w) in clues]
-		return self.g.guesser.score_clues(word_tup, clues)[0][:10]
 
-	def lower(self, array):
-		return [a.lower() for a in array]
+		if self.use_graph_glove:
+			clues = self.g.guesser.filter_valid_words(self.graphglove.graph_glove_clue(word_tup))
 
-	def generate_clues_partition(self, word_tup):
-		if len(word_tup) == 2:
-			clues = self.g.get_two_word_clues(word_tup[0], word_tup[1])
-			return self.g.guesser.score_clues(word_tup, clues)[0][:5]
-		elif len(word_tup) == 1:
-			return []
-		
-		# if (tuple(word_tup) in clues) and clues[tuple(word_tup)] is not None:
-		# 	if (clues[tuple(word_tup)][0]):
-		# 		return self.clues[tuple(word_tup)]
-		# 	else:
-		# 		return [None]
-		# else:
-		# 	return [None]
+		return self.g.guesser.score_clues(word_tup, clues)[0][:5]
+
 		
 	def evaluate_tup(self, word_tup, board, clue):
 		trials = 500
@@ -270,8 +258,12 @@ class Cluer:
 				tup = [ind for ind in tup if ind != -1]
 				word_tup = [remaining_blue_words[t] for t in tup]
 				# for this tuple, find the best clue, set the score to the score for the best clue
-				clues = self.generate_clues_partition(word_tup)
+				if len(word_tup)==1:
+					total_turns += 1
+					continue
+				clues = self.generate_clues(word_tup)
 				if len(clues) == 0:
+					print("no possible clues!")
 					total_turns += 2
 					continue
 				clue_scores = []
@@ -294,7 +286,7 @@ class Cluer:
 			tup = best_partition[i]
 			tup = [ind for ind in tup if ind != -1]
 			word_tup = [remaining_blue_words[t] for t in tup]
-			clues = self.generate_clues_partition(word_tup)
+			clues = self.generate_clues(word_tup)
 			# print("clues", clues)
 			if len(clues) == 0:
 				tup_scores.append(2)
@@ -345,15 +337,6 @@ class Cluer:
 
 
 class Cluer2(Cluer):
-	def generate_clues(self, word_tup):
-		clues = self.g.get_k_word_clue(tuple(word_tup))
-		if (len(word_tup) == 2):
-			clues = [w for (x,w) in clues if x <=3]
-		else:
-			clues = [w for (x,w) in clues]
-		if USE_GRAPH_GLOVE:
-			clues = self.graphglove.graph_glove_clue(word_tup)
-		return self.g.guesser.score_clues(word_tup, clues)[0][:10]
 	def clue_greedy(self):
 		board = self.blue_words + self.red_words + self.bystanders + self.assassin
 		board = [w for w in board if w not in self.previous_guesses]
@@ -405,9 +388,10 @@ class Cluer2(Cluer):
 		if (len(remaining_blue_words) > len(self.blue_words)):
 			return self.clue_greedy()
 		else:
-			USE_GRAPH_GLOVE = True
-			self.clue_partitions()
-			USE_GRAPH_GLOVE = False
+			global USE_GRAPH_GLOVE
+			#USE_GRAPH_GLOVE = True
+			#self.clue_partitions()
+			#USE_GRAPH_GLOVE = False
 			return self.clue_partitions()
 
 

@@ -10,7 +10,7 @@ class GraphGlove():
         ixs = [self.model.token_to_ix[w] for w in words]
         self.dists = self.model.graph_embedding.compute_pairwise_distances(indices=ixs)
         
-    def graph_glove_clue(self, words, n=20):
+    def graph_glove_clue(self, words, n=20, verbose=False):
         #ixs = [self.model.token_to_ix[w] for w in words]
         #dists = self.model.graph_embedding.compute_pairwise_distances(indices=ixs)
         ixs = np.array([self.words.index(x) for x in words])
@@ -18,10 +18,11 @@ class GraphGlove():
         clue_scores = np.max(dists, axis=0)
         clueix = np.argmin(clue_scores)
         clues = np.argsort(clue_scores)[:n]
-        print([(self.model.ix_to_token[w], dists[:,w]) for w in clues])
-        print(dists[:,clueix])
+        if verbose:
+            print([(self.model.ix_to_token[w], dists[:,w]) for w in clues])
+            print(dists[:,clueix])
         #return self.model.ix_to_token[clueix]
-        return [self.model.ix_to_token[w] for w in clues]
+        return [self.model.ix_to_token[w] for w in clues if w<50000]
 
 def load_graph_glove():
     sys.path.append("graph_glove")
