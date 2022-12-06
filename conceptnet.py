@@ -84,6 +84,10 @@ class ConceptNetGraph:
         possible_clues_2 = set(word1_1.keys()).intersection(set(word2_2.keys())).union(set(word1_2.keys()).intersection(set(word2_1.keys()))) - set([word1,word2])
         possible_clues_2 = self.guesser.filter_valid_words(list(possible_clues_2))
         possible_clues = set(possible_clues_1).union(set(possible_clues_2))
+
+        is_allowed = lambda w: all(word not in w and w not in word for word in [word1, word2])
+        possible_clues = [w for w in possible_clues if is_allowed(w)]
+
         if len(possible_clues) > 0:
             return list(possible_clues)
         else:
