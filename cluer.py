@@ -10,9 +10,8 @@ import graphglove
 
 
 USE_GRAPH_GLOVE = True
+lower = lambda l:[x.lower() for x in l]
 class Cluer:
-	def lower(self, array):
-		return [a.lower() for a in array]
 	def __init__(self):
 		self.g = ConceptNetGraph()
 		self.g.load_graph()
@@ -28,7 +27,7 @@ class Cluer:
 			print("precompting distances for graphglove")
 			self.graphglove.precompute_pairwise_dist(blue_words)
 
-		self.assassin, self.red_words, self.blue_words, self.bystanders = self.lower(assassin), self.lower(red_words), self.lower(blue_words), self.lower(bystanders)
+		self.assassin, self.red_words, self.blue_words, self.bystanders = lower(assassin), lower(red_words), lower(blue_words), lower(bystanders)
 		self.previous_guesses = []
 		self.previous_clues = []
 		self.ally_words_remaining = 8
@@ -64,6 +63,17 @@ class Cluer:
 			cl = pickle.load(f)
 		self.clues = cl
 		# print(self.clues[('nurse','ambulance')])
+
+	def generate_clues(self, word_tup):
+		clues = self.g.get_k_word_clue(tuple(word_tup))
+		if (len(word_tup) == 2):
+			clues = [w for (x,w) in clues if x <=3]
+		else:
+			clues = [w for (x,w) in clues]
+		return self.g.guesser.score_clues(word_tup, clues)[0][:10]
+
+	def lower(self, array):
+		return [a.lower() for a in array]
 
 	def generate_clues_partition(self, word_tup):
 		if len(word_tup) == 2:
@@ -147,11 +157,12 @@ class Cluer:
 		if clue == None:
 			return None
 		turn_counts = []
+		board_words_ordered, inner_prods = self.g.guesser.guess(clue, board, len(board))
 		for i in range(trials):
 			#print(i, " out of ", trials)
 			#print(tuple(word_tup))
 			#print("clue", clue)
-			board_words_ordered, inner_prods = self.g.guesser.guess(clue, board, len(board))
+			
 			noise = np.random.normal(0,0.05,size=(len(board)))
 			scores = np.array(inner_prods) + np.array(noise)
 			#print("board", board_words_ordered)
@@ -311,7 +322,9 @@ class Cluer:
 			clue = best_clue # use pair clue only if it exists and doesn't suck
 			n_target = 2
 		else:
-			clue = word_best_tup[0]
+			#clue = word_best_tup[0]
+			clue = self.generate_clues(frozenset([word_best_tup[0]]))[0]
+
 			n_target = 1
 		# if (tuple(word_best_tup) in self.clues):
 		# 	if (self.clues[tuple(word_best_tup)][0]) and (np.min(tup_scores) < 2): # use pair clue only if it exists and doesn't suck
