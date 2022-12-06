@@ -1,10 +1,14 @@
 GoogleNews_vectors.bin
+GoogleNews-vectors-negative300.bin
 conceptnet-assertions
 mini.h5
 wiki-100k.txt
 __pycache__
 logs/tinazz/codenames2_record_1669758567.csv
 numberbatch-en.txt
+numberbatch-en-small.txt
 out.txt
+conceptnet-assertions-python
 conceptnet-assertions-en
 conceptnet-assertions-5.7.0.csv
+graphglove_wiki50k_dist_20d.model.pth

@@ -1,0 +1,3 @@
+[submodule "graph_glove"]
+	path = graph_glove
+	url = https://github.com/yandex-research/graph-glove.git

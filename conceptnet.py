@@ -48,6 +48,7 @@ class ConceptNetGraph:
         with open("conceptnet-assertions-en","wb") as f:
             pickle.dump(self.edges, f)
     def load_graph(self):
+        print("loading conceptnet")
         if "conceptnet-assertions-en" not in os.listdir():
             raise FileNotFoundError("You need to download the conceptnet assertions file from https://s3.amazonaws.com/conceptnet/downloads/2019/edges/conceptnet-assertions-5.7.0.csv.gz")
         with open("conceptnet-assertions-en","rb") as f:
@@ -69,6 +70,26 @@ class ConceptNetGraph:
                         degree = len(self.edges[neighbor])
                         if degree>10 and degree<5000:
                             l[neighbor] = l[w] + [(neighbor,n[1])]
+        return l
+
+    @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word, k : cachetools.keys.methodkey(self, word, k))
+    def get_weighted_distance_k_neighbors(self, word, k):
+        # return a dictionary where keys are distance k words, and values are lists that are the path to that word
+        l={word:[(word,100)]}
+        for i in range(k):
+            l_temp = list(l.keys()).copy()
+            for w in l_temp:
+                for n in self.edges[w]:
+                    neighbor = n[0]
+                    if neighbor in l:
+                        continue
+                    else:
+                        degree = len(self.edges[neighbor])
+                        if degree>10 and degree<5000:
+                            path = l[w] + [(neighbor,n[1])]
+                            path_weight = sum(1/x[1] for x in path)
+                            if path_weight<2:
+                                l[neighbor] = path
         return l
 
     @cachetools.cachedmethod(lambda self: self.cache, key = lambda self, word1, word2 : cachetools.keys.methodkey(self, word1, word2))
@@ -248,8 +269,10 @@ def test_three_word_clue():
     print(g.get_two_word_clue("palm","glove",guesser))
 
 
+
 if __name__ == "__main__":
-    # run()
-    test_three_word_clue()
     # g = ConceptNetGraph()
     # g.parse_graph()
+    #run()
+    #test_three_word_clue()
+    load_graph_glove()

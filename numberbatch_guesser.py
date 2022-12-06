@@ -2,6 +2,7 @@ import tqdm
 import pickle
 import numpy as np
 import pandas as pd
+import os
 
 # download this file:
 # https://conceptnet.s3.amazonaws.com/downloads/2019/numberbatch/numberbatch-en-19.08.txt.gz
@@ -22,9 +23,16 @@ class Guesser:
         # data = hf.get('mat')
         # raw_words = np.array(data['axis1'])
         # vecs = np.array(data['block0_values'])
-        df = pd.read_csv('numberbatch-en.txt', delimiter=' ', skiprows=[0], header=None)
-        raw_words = np.array( df.iloc[:, 0] )
-        vecs = np.array( df.iloc[:, 1:] )
+        print("loading numberbatch")
+        if "numberbatch-en-small.txt" not in os.listdir():
+            create_minimal_numberbatch()
+        df = pd.read_csv('numberbatch-en-small.txt', delimiter=',', skiprows=[0], header=None)
+        raw_words = np.array( df.iloc[:, 1] )
+        self.words = raw_words
+        vecs = np.array( df.iloc[:, 2:] )
+        self.embedding = vecs
+        return
+        """
         with open('wiki-100k.txt', encoding='utf8') as file:
             lines = []
             for line in file:
@@ -46,6 +54,7 @@ class Guesser:
         valid_inds = np.array(valid_inds)
         self.words = np.array(valid_words)
         self.embedding = vecs[valid_inds]
+        """
 
     def filter_valid_words(self, ws):
         ws = list(ws)
@@ -79,9 +88,45 @@ class Guesser:
         maxes = np.amin(inner_prods, axis=0)
         sort_inds = np.argsort(maxes)[::-1]
         return np.array(clues)[sort_inds], maxes[sort_inds]
-        
+
+def create_minimal_numberbatch():
+    df = pd.read_csv('numberbatch-en.txt', delimiter=' ', skiprows=[0], header=None)
+    raw_words = np.array( df.iloc[:, 0] )
+    vecs = np.array( df.iloc[:, 1:] )
+    with open('wiki-100k.txt', encoding='utf8') as file:
+        lines = []
+        for line in file:
+            if line.rstrip().isalpha():
+                lines.append(line.rstrip().lower())
+    with open("codewords_simplified.txt") as file:
+        lines2 = [s.strip().lower() for s in file.readlines()]
+    common_words = np.sort(np.unique(np.array(lines+lines2)))
+
+    valid_inds = []
+    valid_words = []
+    for i in range(len(raw_words)):
+        w = raw_words[i]
+        search_ind = np.searchsorted(common_words, w)
+        if search_ind < len(common_words) and common_words[search_ind] == w:
+            valid_inds.append(i)
+            valid_words.append(w)
+
+    valid_inds = np.array(valid_inds)
+
+    df.iloc[valid_inds,:].to_csv("numberbatch-en-small.txt",header=False)
+
+
 
 if __name__=="__main__":
+    pass
+
+    # hf = h5py.File('mini.h5', 'r')
+    # data = hf.get('mat')
+    # raw_words = np.array(data['axis1'])
+    # vecs = np.array(data['block0_values'])
+    
+
+"""
     g = Guesser()
     g.load_data()
     print('what would I guess for "apple", in descending order of preference?')
@@ -92,3 +137,4 @@ if __name__=="__main__":
 
     #print(g.score_clues(['africa', 'agent'],['tripoli', 'antimalarial', 'patient', 'service', 'chad', 'transport', 'metaphosphoric_acid', 'ant', 'europe', 'antpecker', 'bishop', 'polish', 'continent', 'snake', 'seven', 'global_south', 'rider', 'double', 'cement', 'gun', 'abc', 'poison', 'bond', 'scour', 'horn', 'vehicle', 'guy', 'name', 'marabou', 'antarctica', 'cat', 'gnu', 'official', 'avail', 'shari', 'political', 'hypo', 'malaria', 'act', 'central_african_republic']))
     print(g.filter_valid_words(['tripoli', 'antimalarial', 'patient', 'service', 'chad', 'transport', 'metaphosphoric_acid', 'ant', 'europe', 'antpecker', 'bishop', 'polish', 'continent', 'snake', 'seven', 'global_south', 'rider', 'double', 'cement', 'gun', 'abc', 'poison', 'bond', 'scour', 'horn', 'vehicle', 'guy', 'name', 'marabou', 'antarctica', 'cat', 'gnu', 'official', 'avail', 'shari', 'political', 'hypo', 'malaria', 'act', 'central_african_republic'], []))
+"""

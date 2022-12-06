@@ -38,6 +38,8 @@ if __name__ == "__main__":
             blue_words = lower(board_words[10:18])
             bystanders = lower(board_words[18:25])
 
+            spymaster.new_game(assassin=assassin, red_words=red_words, blue_words=blue_words, bystanders=bystanders)
+
             spymaster.assassin = assassin
             spymaster.red_words = red_words
             spymaster.blue_words = blue_words
