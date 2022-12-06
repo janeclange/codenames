@@ -83,8 +83,13 @@ def get_adversary_cluer(embedding_type="word2vec"):
     return clue
 
 def get_guesser(embedding="word2vec"):
-    from embeddings import word2vec
-    embedding = word2vec.Word2Vec()
+    if embedding == "word2vec":
+        from embeddings import word2vec
+        embedding = word2vec.Word2Vec()
+    elif embedding == "glove":
+        from embeddings import glove
+        embedding = glove.Glove()
+
     def guesser(words, clue, n):
         scores = np.array([embedding.get_word_similarity(word, clue) for word in words])
         word_idc = np.argmax(scores)
@@ -103,7 +108,8 @@ def our_cluer():
 if __name__ == "__main__":
     result = eval(get_adversary_cluer(), get_guesser())
     result2 = eval(our_cluer(), get_guesser())
-    print(result, result2)
+    result3 = eval(get_adversary_cluer(), get_guesser("glove"))
+    print(result, result2, result3)
 
 
 
