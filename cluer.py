@@ -283,8 +283,9 @@ class Cluer:
 					# this_partition = [tup for tup in this_partition if tup != [-1]]
 					partitions.append(this_partition)
 
-		partition_turn_counts = []
-		partition_best_clue = []
+		partition_turn_counts = [] #for each partition, the total turns it took
+		partition_best_clue = [] #for each partition, a tuple (score of best clue, targets of best clue, clue)
+		subset_best_clue = {} #for each subset of your words, tuple of (score, clue) where score is the number of turns from evaluate_tup.
 
 		# for each partition, for each pair/singleton in the partition, compute the behaviour of the guesser using 100(?) random trials
 		for i in tqdm.tqdm(list(range(len(partitions)))):
@@ -297,12 +298,18 @@ class Cluer:
 				tup = partition[j]
 				tup = [ind for ind in tup if ind != -1]
 				word_tup = [remaining_blue_words[t] for t in tup]
+				word_set = frozenset(word_tup)
+				if word_set in subset_best_clue:
+					this_partition_clue_scores.append(subset_best_clue[word_set][0])
+					this_partition_clues.append(subset_best_clue[word_set][1])
+					total_turns += subset_best_clue[word_set][0]
+					continue
 				# for this tuple, find the best clue, set the score to the score for the best clue
 				clues = self.generate_clues(word_tup)
 				clue_scores = []
 				#t = int((500) * (1/len(partitions)) * 105)
-				#t = 500
-				t = (100 if len(partitions) > 500 else 500)
+				t = 500
+				#t = (100 if len(partitions) > 500 else 500)
 				if len(clues) == 0:
 					#print("no possible clues!")
 					#print(word_tup)
@@ -319,11 +326,13 @@ class Cluer:
 					else:
 						clue_scores.append(self.evaluate_tup(word_tup, board, clues[i], trials=t))
 						# print("current clue", clues[i])
+				clue = clues[np.argmin(clue_scores)]
 				tup_score = np.min(clue_scores)
 				# if len(word_tup) == 1:
 				# 	print("tup_score for length 1 clue",tup_score)
 				this_partition_clue_scores.append(tup_score)
-				this_partition_clues.append(clues[np.argmin(clue_scores)])
+				this_partition_clues.append(clue)
+				subset_best_clue[word_set] = (tup_score, clue)
 				total_turns += tup_score
 			partition_turn_counts.append(total_turns)
 			this_partition_normalised_clue_scores = [this_partition_clue_scores[j] / len(partition[j]) for j in range(len(partition))]
@@ -334,6 +343,7 @@ class Cluer:
 		best_partition_ix = np.argmin(partition_turn_counts)
 		best_partition_score = partition_turn_counts[best_partition_ix]
 		# print(partitions[best_partition_ix])
+		print("subset_best_clue len:",len(subset_best_clue))
 		print("Best partition score:", best_partition_score)
 		if best_partition_score >= len(remaining_blue_words):
 			self.word_best_tup = [random.choice(remaining_blue_words)]
