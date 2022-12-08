@@ -50,8 +50,9 @@ if __name__ == "__main__":
             spymaster.previous_clues = []
             spymaster.previous_clues_output = []
 
-            print([assassin, red_words, blue_words, bystanders])
+            #print([assassin, red_words, blue_words, bystanders])
             random.shuffle(board_words)
+            print("New game -- here is the board")
             print(board_words)
 
             done = False
@@ -59,33 +60,44 @@ if __name__ == "__main__":
             while not done:
                 clue_tup = spymaster.clue()
                 target_words = spymaster.word_best_tup
+                print("Remaining words: " + str(set(board_words) - set(spymaster.previous_guesses)))
+                print("Blue words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)) or ""))
+                print("Red words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.red_words)) or ""))
+                print("Bystanders found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.bystanders)) or ""))
+
                 print("Clue: ", clue_tup)
                 spymaster.previous_clues.append(clue_tup[0])
-                spymaster.previous_clues_output.append(target_words)
+                spymaster.previous_clues_output.append(list(target_words))
+                
                 # print("Targets:", target_words)
                 n_target = clue_tup[1]
                 turn_done = False
                 guessed_words = []
                 while not turn_done:
                     guess = ""
-                    while guess not in board_words or guess in spymaster.previous_guesses:
-                        print("Enter a word on the board that hasn't been previously guessed:")
-                        guess = input()
-
+                    while guess != "new game" and guess != "quit" and (guess not in board_words or guess in spymaster.previous_guesses):
+                        print("Enter a word on the board that hasn't been previously guessed. Enter \"new game\" to refresh the board, or \"quit\" to quit.")
+                        guess = input().strip()
+                    if guess == "new game":
+                        turn_done = True
+                        done = True
+                        break
+                    if guess == "quit": 
+                        exit()
                     spymaster.previous_guesses.append(guess.lower())
                     guessed_words.append(guess.lower())
-                    print(set(board_words) - set(spymaster.previous_guesses))
+
                     if guess in assassin:
-                        print("Assassin")
+                        print("You guessed the Assassin.")
                         turn_done = True
                         done = True
                         turns += 25
                     if guess in red_words:
-                        print("Red")
+                        print("You guessed a Red word (that's the opposing team).")
                         turns += 1
                         turn_done = True
                     if guess in blue_words:
-                        print("Blue")
+                        print("You guessed a Blue word (that's your team).")
                         n_target -= 1
                         # guesser.ally_words_remaining -= 1
                         if n_target == 0:
@@ -94,8 +106,13 @@ if __name__ == "__main__":
                         if n_ally_words_left == 0:
                             done = True
                     if guess in bystanders:
-                        print("Bystander")
+                        print("You guessed a Bystander.")
                         turn_done = True
+                    print("Remaining words: " + str(set(board_words) - set(spymaster.previous_guesses)))
+                    print("Blue: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)) or ""))
+                    print("Red: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.red_words)) or ""))
+                    print("Bystander: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.bystanders)) or ""))
+
                 writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
                 guessed_words = []
                 turns += 1
@@ -106,6 +123,6 @@ if __name__ == "__main__":
             print("True board:")
             print([assassin, red_words, blue_words, bystanders])
             print("Intended clues:")
-            print(spymaster.previous_clues_output)
+            print(list(zip(spymaster.previous_clues, spymaster.previous_clues_output)))
     finally:
         record_csv.close()
