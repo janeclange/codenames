@@ -30,6 +30,9 @@ if __name__ == "__main__":
     record_csv = open(f'logs/{getpass.getuser()}/codenames2_record_{int(time.time())}.csv', 'w')
     writer = csv.writer(record_csv)
 
+    turns_csv = open(f'logs/{getpass.getuser()}/codenames2_turns_{int(time.time())}.csv', 'w')
+    turns_writer = csv.writer(turns_csv)
+
     try:
         while(True):
             board_words = lower(sample(codewords, k=25))
@@ -120,9 +123,11 @@ if __name__ == "__main__":
 
             print("Game finished!")
             print("Turns: " + str(turns))
+            turns_writer.writerow(turns)
             print("True board:")
             print([assassin, red_words, blue_words, bystanders])
             print("Intended clues:")
             print(list(zip(spymaster.previous_clues, spymaster.previous_clues_output)))
     finally:
         record_csv.close()
+        turns_csv.close()
