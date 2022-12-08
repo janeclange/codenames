@@ -465,17 +465,17 @@ class Cluer2(Cluer):
 
 		remaining_blue_words = frozenset([w for w in self.blue_words if w not in self.previous_guesses])
 
-		return self.clue_partitions()
+		# return self.clue_partitions()
 
-		#if (len(remaining_blue_words) >= len(self.blue_words)):
-		# if (len(remaining_blue_words) >= 0):
-		# 	clue = self.clue_greedy()
-		# 	#print (clue, self.word_best_tup)
-		# 	if clue[1] > 2: 
-		# 		return clue 
-		# 	return self.clue_partitions()
-		# else:
-		# 	return self.clue_partitions()
+		if (len(remaining_blue_words) >= len(self.blue_words)):
+		if (len(remaining_blue_words) >= 0):
+			clue = self.clue_greedy()
+			#print (clue, self.word_best_tup)
+			if clue[1] > 2: 
+				return clue 
+			return self.clue_partitions()
+		else:
+			return self.clue_partitions()
 
 
 
