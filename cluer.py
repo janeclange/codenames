@@ -32,7 +32,6 @@ class Cluer:
 		self.previous_guesses = []
 		self.previous_clues = []
 		self.previous_clues_output = []
-		self.ally_words_remaining = 8
 
 	def precompute(self):
 		self.clues = {}

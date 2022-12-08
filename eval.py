@@ -100,7 +100,7 @@ def get_guesser(embedding="word2vec"):
 def our_cluer():
     spymaster = Cluer2()
     def cluer(positive, negative, neutral, assassin):
-        spymaster.assassin, spymaster.red_words, spymaster.blue_words, spymaster.bystanders = spymaster.lower(assassin), spymaster.lower(negative), spymaster.lower(positive), spymaster.lower(neutral)
+        spymaster.new_game(assassin=assassin, red_words=red_words, blue_words=blue_words, bystanders=bystanders)
         return spymaster.clue()
 
     return cluer
