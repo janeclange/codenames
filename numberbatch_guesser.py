@@ -33,6 +33,9 @@ class Guesser:
         self.embedding = vecs
         return
         """
+        df = pd.read_csv('numberbatch-en.txt', delimiter=' ', skiprows=[0], header=None)
+        raw_words = np.array( df.iloc[:, 0] )
+        vecs = np.array( df.iloc[:, 1:] )
         with open('wiki-100k.txt', encoding='utf8') as file:
             lines = []
             for line in file:

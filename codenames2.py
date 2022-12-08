@@ -23,7 +23,7 @@ with open("cm_wordlist.txt") as f:
 if __name__ == "__main__":
 
     spymaster = Cluer2()
-    spymaster.load_clues()
+    # spymaster.load_clues()
 
     #clue_sample = sample(clue_words, 1000)
     os.makedirs(f"logs/{getpass.getuser()}", exist_ok=True)
@@ -33,6 +33,8 @@ if __name__ == "__main__":
     try:
         while(True):
             board_words = lower(sample(codewords, k=25))
+            #board_words = ['snowman','giant','helicopter','field','scorpion','alps','ray','unicorn','maple','calf','shop','table','circle','part','bridge','turkey','bell','lawyer','play','cricket','log','australia','chair','bar','center']
+            #board_words = ['school','pyramid','organ','robin','bomb','superhero','contract','thumb','dwarf','note','microscope','chest','triangle','fair','stream','bugle','stadium','arm','spike','boom','band','antarctica','palm','fall','spring']
             assassin = lower([board_words[0]])
             red_words = lower(board_words[1:10])
             blue_words = lower(board_words[10:18])
@@ -48,7 +50,7 @@ if __name__ == "__main__":
             spymaster.previous_clues = []
             spymaster.previous_clues_output = []
 
-            #print([assassin, red_words, blue_words, bystanders])
+            print([assassin, red_words, blue_words, bystanders])
             random.shuffle(board_words)
             print(board_words)
 
@@ -60,6 +62,7 @@ if __name__ == "__main__":
                 print("Clue: ", clue_tup)
                 spymaster.previous_clues.append(clue_tup[0])
                 spymaster.previous_clues_output.append(target_words)
+                # print("Targets:", target_words)
                 n_target = clue_tup[1]
                 turn_done = False
                 guessed_words = []
@@ -71,7 +74,7 @@ if __name__ == "__main__":
 
                     spymaster.previous_guesses.append(guess.lower())
                     guessed_words.append(guess.lower())
-                    print(spymaster.previous_guesses)
+                    print(set(board_words) - set(spymaster.previous_guesses))
                     if guess in assassin:
                         print("Assassin")
                         turn_done = True

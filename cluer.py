@@ -4,9 +4,10 @@ import numberbatch_guesser
 from conceptnet import ConceptNetGraph
 from conceptnet import powersetify
 from itertools import permutations
+from itertools import combinations
 import numpy as np
 import random
-import graphglove
+# import graphglove
 
 
 lower = lambda l:[x.lower() for x in l]
@@ -79,8 +80,7 @@ class Cluer:
 		return self.g.guesser.score_clues(word_tup, clues)[0][:5]
 
 		
-	def evaluate_tup(self, word_tup, board, clue):
-		trials = 500
+	def evaluate_tup(self, word_tup, board, clue, trials=500):
 		# print("evaluating tuple: ", word_tup)
 		if clue == None:
 			return None
@@ -102,27 +102,47 @@ class Cluer:
 			turns = None
 			intended_set = set(word_tup)
 			guess_set = set(guesses)
+			remaining_blue = set(self.blue_words) - set(self.previous_guesses)
+			remaining_red = set(self.red_words) - set(self.previous_guesses)
+			remaining_bystanders = set(self.bystanders) - set(self.previous_guesses)
+
 			if intended_set == guess_set:
-				turns = 1		# effective turns: 1
+				turns = 1 		# effective turns: 1
 				#print("Exact!")
 			elif self.assassin[0] in guess_set:
 				turns = 25
-			elif len(guess_set.intersection(set(self.blue_words))) == 2:
+			# else:
+			# 	#simulate user guessing
+			# 	score = 1
+			# 	done = False
+			# 	while (i < len(guesses)) and (not done):
+			# 		if guesses[i] in self.blue_words:
+			# 			score -= 1
+			# 		elif guesses[i] in self.bystanders:
+			# 			#score += 0.5
+			# 			done = True
+			# 		elif guesses[i] in self.red_words:
+			# 			score += 1
+			# 			done = True
+			# 		i += 1
+			# 	turns = score + 2
+			
+			elif len(guess_set.intersection(remaining_blue)) == 2:
 				#print("Two positive")
 				turns = 1.5 	# effective turns: slightly more than 1, because you might have messed up your partition
-			elif (len(guess_set.intersection(set(self.blue_words))) == 1) and (len(guess_set.intersection(set(self.bystanders))) == 1):
+			elif (len(guess_set.intersection(remaining_blue)) == 1) and (len(guess_set.intersection(remaining_bystanders)) == 1):
 				#print("One pos, one neutral")
 				turns = 2 	# effective turns: 1 turn actually passes, +1 penalty because you'll have to reclue the other word
-			elif len(guess_set.intersection(set(self.bystanders))) == 2:
+			elif len(guess_set.intersection(remaining_bystanders)) == 2:
 				#print("Two neutral")
 				turns = 3 		# 1 turn actually passes, and you'll have to reclue both ally words
-			elif (len(guess_set.intersection(set(self.blue_words))) == 1) and (len(guess_set.intersection(set(self.red_words))) == 1):
+			elif (len(guess_set.intersection(remaining_blue)) == 1) and (len(guess_set.intersection(remaining_red)) == 1):
 				#print("One pos, one neg")
 				turns = 3 		# effective turns: 1 turn passes, +1 for negative word, and you'll also have to reclue the other ally word
-			elif (len(guess_set.intersection(set(self.bystanders))) == 1) and (len(guess_set.intersection(set(self.red_words))) == 1):
+			elif (len(guess_set.intersection(remaining_bystanders)) == 1) and (len(guess_set.intersection(remaining_red)) == 1):
 				#print("One neutral, one neg")
 				turns = 4 		# effective turns: 1 turn passes, +1 for negative word, and you'll have to reclue both ally words
-			elif len(guess_set.intersection(set(self.red_words))) == 2:
+			elif len(guess_set.intersection(remaining_red)) == 2:
 				#print("Two negative")
 				turns = 5
 				# 1 turn actually passes, 2 turn points for hitting negative words, and you'll have to reclue both ally words
@@ -133,7 +153,9 @@ class Cluer:
 			else:
 				print("Something went wrong...")
 				print(guess_set)
+			
 			# turns -= 0.2 # make it slightly prefer 2-word clues
+			# turns -= 2 # hack for now to make it consistent with the greedy cluer's scoring system
 			turn_counts.append(turns)
 		avg_turns = np.average(turn_counts)
 		#print("raw score for ", word_tup, ": ", avg_turns)
@@ -152,7 +174,7 @@ class Cluer:
 			#print(tuple(word_tup))
 			#print("clue", clue)
 			
-			noise = np.random.normal(0, 0.1, size=(len(board)))
+			noise = np.random.normal(0, 0.05, size=(len(board)))
 			scores = np.array(inner_prods) + np.array(noise)
 			#print("board", board_words_ordered)
 			#print("scores", scores)
@@ -164,6 +186,9 @@ class Cluer:
 			turns = None
 			intended_set = set(word_tup)
 			guess_set = set(guesses)
+			remaining_blue = set(self.blue_words) - set(self.previous_guesses)
+			remaining_red = set(self.red_words) - set(self.previous_guesses)
+			remaining_bystanders = set(self.bystanders) - set(self.previous_guesses)
 			if intended_set == guess_set:
 				turns = 1 - len(guess_set) 		# effective turns: 1
 				#print("Exact!")
@@ -174,12 +199,12 @@ class Cluer:
 				score = 1
 				done = False
 				while (i < len(guesses)) and (not done):
-					if guesses[i] in self.blue_words:
+					if guesses[i] in remaining_blue:
 						score -= 1
-					elif guesses[i] in self.bystanders:
+					elif guesses[i] in remaining_bystanders:
 						#score += 0.5
 						done = True
-					elif guesses[i] in self.red_words:
+					elif guesses[i] in remaining_red:
 						score += 1
 						done = True
 					i += 1
@@ -240,14 +265,23 @@ class Cluer:
 
 		# brute force search over all possible partitions
 		n_ally_words_left = len(remaining_blue_words)
-		indices = [i for i in range(n_ally_words_left)] # pad to be even with -1
-		if len(indices) % 2 != 0:
-			indices.append(-1)
-		p = []
-		for perm in permutations(indices):
-			p.append(sorted([sorted((perm[2*i], perm[2*i+1])) for i in range(len(indices)//2)]))
-			# print(p[-1])
-		partitions = np.unique(p, axis=0)
+		partitions = []
+		indices = [i for i in range(n_ally_words_left)]
+		start = (1 if len(indices) % 2 != 0 else 0)
+		for num_singletons in range(start,n_ally_words_left+1,2):
+			for singleton_indices in combinations(indices, num_singletons): # pick which indices are the singletons
+				this_partition_init = [[singleton_indices[i]] for i in range(len(singleton_indices))] # initialise partition with the singletons
+				# now append all the pairs to this_partition
+				remaining_indices = [i for i in range(n_ally_words_left) if i not in singleton_indices]
+				p = []
+				for perm in permutations(remaining_indices):
+					p.append(sorted([sorted((perm[2*i], perm[2*i+1])) for i in range(len(remaining_indices)//2)]))
+					# print(p[-1])
+				remaining_partitions = np.unique(p, axis=0)
+				for pair_part in remaining_partitions:
+					this_partition = this_partition_init + pair_part.tolist()
+					# this_partition = [tup for tup in this_partition if tup != [-1]]
+					partitions.append(this_partition)
 
 		partition_turn_counts = []
 		partition_best_clue = []
@@ -259,26 +293,35 @@ class Cluer:
 			this_partition_clue_scores = []
 			this_partition_clues = []
 			total_turns = 0
-			for tup in partition:
+			for j in range(len(partition)):
+				tup = partition[j]
 				tup = [ind for ind in tup if ind != -1]
 				word_tup = [remaining_blue_words[t] for t in tup]
 				# for this tuple, find the best clue, set the score to the score for the best clue
-				if len(word_tup)==1:
-					total_turns += 1
-					continue
 				clues = self.generate_clues(word_tup)
-				if len(clues) == 0:
-					print("no possible clues!")
-					total_turns += 2
-					continue
 				clue_scores = []
+				#t = int((500) * (1/len(partitions)) * 105)
+				#t = 500
+				t = (100 if len(partitions) > 500 else 500)
+				if len(clues) == 0:
+					#print("no possible clues!")
+					#print(word_tup)
+					total_turns += 2
+					this_partition_clue_scores.append(2)
+					this_partition_clues.append(None)
+					continue
 				for i in range(len(clues)):
 					if clues[i] in self.previous_clues:
 						clue_scores.append(np.Inf)
+						continue
+					if len(word_tup)==1:
+						clue_scores.append(self.evaluate_tup_greedy(word_tup, board, clues[i], trials=t) + 1)
 					else:
-						clue_scores.append(self.evaluate_tup(word_tup, board, clues[i]))
-					# print("current clue", clues[i])
+						clue_scores.append(self.evaluate_tup(word_tup, board, clues[i], trials=t))
+						# print("current clue", clues[i])
 				tup_score = np.min(clue_scores)
+				# if len(word_tup) == 1:
+				# 	print("tup_score for length 1 clue",tup_score)
 				this_partition_clue_scores.append(tup_score)
 				this_partition_clues.append(clues[np.argmin(clue_scores)])
 				total_turns += tup_score
@@ -289,12 +332,22 @@ class Cluer:
 
 		best_partition_ix = np.argmin(partition_turn_counts)
 		best_partition_score = partition_turn_counts[best_partition_ix]
+		# print(partitions[best_partition_ix])
+		print("Best partition score:", best_partition_score)
 		if best_partition_score >= len(remaining_blue_words):
 			self.word_best_tup = [random.choice(remaining_blue_words)]
-			clue = self.generate_clues(self.word_best_tup)[0]
+			clues = self.generate_clues(self.word_best_tup)
+			clue_scores = []
+			t = 500
+			for i in range(len(clues)):
+				if clues[i] in self.previous_clues:
+					clue_scores.append(np.Inf)
+					continue
+				clue_scores.append(self.evaluate_tup_greedy(word_tup, board, clues[i], trials=t))
 			n_target = 1
+			clue = clues[np.argmin(clue_scores)]
 		else:
-			n_target = 2
+			n_target = len(partition_best_clue[best_partition_ix][1])
 			clue = partition_best_clue[best_partition_ix][2]
 			self.word_best_tup = partition_best_clue[best_partition_ix][1]
 		return (clue,n_target)
@@ -302,7 +355,7 @@ class Cluer:
 
 
 
-
+		"""
 		# calculate the best clue in this partition
 		tup_scores = []
 		best_clues = []
@@ -359,7 +412,7 @@ class Cluer:
 		self.word_best_tup = word_best_tup[:n_target]
 		print(clue, n_target, best_clue_score)
 		return (clue, n_target)
-
+		"""
 
 class Cluer2(Cluer):
 	def clue_greedy(self):
@@ -379,6 +432,7 @@ class Cluer2(Cluer):
 			if (len(possible_clues) > 0):
 				for clue in possible_clues:
 					t = (500 if len(remaining_blue_words)<6 else 250)
+					# t = int((250) * (1/len(partitions)) * 255)
 					score = self.evaluate_tup_greedy(p, board, clue,trials=t)
 					if clue in self.previous_clues:
 						clue_scores.append(np.Inf)
@@ -411,16 +465,17 @@ class Cluer2(Cluer):
 
 		remaining_blue_words = frozenset([w for w in self.blue_words if w not in self.previous_guesses])
 
+		return self.clue_partitions()
 
 		#if (len(remaining_blue_words) >= len(self.blue_words)):
-		if (len(remaining_blue_words) >= 0):
-			clue = self.clue_greedy()
-			#print (clue, self.word_best_tup)
-			if clue[1] > 2: 
-				return clue 
-			return self.clue_partitions()
-		else:
-			return self.clue_partitions()
+		# if (len(remaining_blue_words) >= 0):
+		# 	clue = self.clue_greedy()
+		# 	#print (clue, self.word_best_tup)
+		# 	if clue[1] > 2: 
+		# 		return clue 
+		# 	return self.clue_partitions()
+		# else:
+		# 	return self.clue_partitions()
 
 
 
