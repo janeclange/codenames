@@ -50,8 +50,9 @@ if __name__ == "__main__":
             spymaster.previous_clues = []
             spymaster.previous_clues_output = []
 
-            print([assassin, red_words, blue_words, bystanders])
+            #print([assassin, red_words, blue_words, bystanders])
             random.shuffle(board_words)
+            print("New game -- here is the board")
             print(board_words)
 
             done = False
@@ -59,13 +60,15 @@ if __name__ == "__main__":
             while not done:
                 clue_tup = spymaster.clue()
                 target_words = spymaster.word_best_tup
+                print("Remaining words: " + str(set(board_words) - set(spymaster.previous_guesses)))
+                print("Blue words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)) or ""))
+                print("Red words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.red_words)) or ""))
+                print("Bystanders found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.bystanders)) or ""))
+
                 print("Clue: ", clue_tup)
                 spymaster.previous_clues.append(clue_tup[0])
-                spymaster.previous_clues_output.append(target_words)
-                print("Remaining words: " + str(set(board_words) - set(spymaster.previous_guesses)))
-                print("Blue: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)) or ""))
-                print("Red: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.red_words)) or ""))
-                print("Bystander: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.bystanders)) or ""))
+                spymaster.previous_clues_output.append(list(target_words))
+                
                 # print("Targets:", target_words)
                 n_target = clue_tup[1]
                 turn_done = False
