@@ -326,7 +326,8 @@ class Cluer:
 				this_partition_clues.append(clues[np.argmin(clue_scores)])
 				total_turns += tup_score
 			partition_turn_counts.append(total_turns)
-			ix = np.argmin(this_partition_clue_scores)
+			this_partition_normalised_clue_scores = [this_partition_clue_scores[j] / len(partition[j]) for j in range(len(partition))]
+			ix = np.argmin(this_partition_normalised_clue_scores)
 			partition_best_clue.append((this_partition_clue_scores[ix], [remaining_blue_words[t] for t in partition[ix] if t!=-1], this_partition_clues[ix]))
 		# use the partition with the lowest turn count (unless it really sucks, then we should hint singletons instead)
 
@@ -467,7 +468,7 @@ class Cluer2(Cluer):
 
 		# return self.clue_partitions()
 
-		if (len(remaining_blue_words) >= len(self.blue_words)):
+		# if (len(remaining_blue_words) >= len(self.blue_words)):
 		if (len(remaining_blue_words) >= 0):
 			clue = self.clue_greedy()
 			#print (clue, self.word_best_tup)
