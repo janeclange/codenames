@@ -73,6 +73,7 @@ def get_adversary_cluer(embedding_type="word2vec"):
         game._build_game(red=negative, blue=positive)
         best_scores, best_clues, best_board_words_for_clue = game.get_clue(2, 1)
         z = list(zip(best_scores, best_clues, best_board_words_for_clue))
+        # If no clue is given, clue "glove"
         if len(z) == 0:
             z = [(0, ["glove"], ["unk-eliot", "unk-eliot"])]
         best = min(z, key=lambda x: x[0])
