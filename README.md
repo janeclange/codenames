@@ -5,14 +5,13 @@ Installation:
 
 1. Clone this repo
 2. `pip install reqirements.txt`
-3. download the necessary word embeddings:
- 
+3. download the necessary word embeddings: `sh get-data.sh`
 
-Step 1: borrow scaffolding code from an existing codenames paper divyakoyy/codenames \\
+To play a game:
 
-Step 2: write a basic objective function based on 1 similarity scoring function that takes a set of your cards and a set of opponent cards and evaluates how strong a given clue word is \\
+Run python codename2.py
 
-Step 3: replace the single-embedding similarity with max similarity over several embeddings \\
+The bot plays the spymaster, and you play the guesser.
 
-codewords_simplified contains only words that are present in GoogleNews set
+
 
