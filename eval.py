@@ -73,6 +73,7 @@ def get_adversary_cluer(embedding_type="word2vec"):
         game._build_game(red=negative, blue=positive)
         best_scores, best_clues, best_board_words_for_clue = game.get_clue(2, 1)
         z = list(zip(best_scores, best_clues, best_board_words_for_clue))
+        # If no clue is given, clue "glove"
         if len(z) == 0:
             z = [(0, ["glove"], ["unk-eliot", "unk-eliot"])]
         best = min(z, key=lambda x: x[0])
@@ -97,18 +98,38 @@ def get_guesser(embedding="word2vec"):
 
     return guesser
 
-def our_cluer():
+def get_numberbatch_guesser():
+    import numberbatch_guesser
+    cl = numberbatch_guesser.Guesser()
+
+    def guesser(words, clue, n):
+        try:
+            guess = cl.guess(clue, list(words), n)
+        except:
+            import IPython; IPython.embed()
+        return guess
+
+    return guesser
+
+
+def get_our_cluer():
     spymaster = Cluer2()
     def cluer(positive, negative, neutral, assassin):
-        spymaster.new_game(assassin=assassin, red_words=red_words, blue_words=blue_words, bystanders=bystanders)
+        spymaster.new_game(assassin=assassin, red_words=negative, blue_words=positive, bystanders=neutral)
         return spymaster.clue()
 
     return cluer
 
 if __name__ == "__main__":
-    result = eval(get_adversary_cluer(), get_guesser())
-    result2 = eval(our_cluer(), get_guesser())
+    our_cluer = get_our_cluer()
+    numberbatch_guesser = get_numberbatch_guesser()
+    result4 = eval(our_cluer, numberbatch_guesser)
+    print(result4)
+    result2 = eval(our_cluer, get_guesser())
+    print(result2)
     result3 = eval(get_adversary_cluer(), get_guesser("glove"))
+    print(result3)
+    result = eval(get_adversary_cluer(), get_guesser())
     print(result, result2, result3)
 
 

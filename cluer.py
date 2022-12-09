@@ -342,8 +342,8 @@ class Cluer:
 		best_partition_ix = np.argmin(partition_turn_counts)
 		best_partition_score = partition_turn_counts[best_partition_ix]
 		# print(partitions[best_partition_ix])
-		print("subset_best_clue len:",len(subset_best_clue))
-		print("Best partition score:", best_partition_score)
+		#print("subset_best_clue len:",len(subset_best_clue))
+		print("Remaining turns predicted:", best_partition_score)
 		if best_partition_score >= len(remaining_blue_words):
 			self.word_best_tup = [random.choice(remaining_blue_words)]
 			clues = self.generate_clues(self.word_best_tup)
