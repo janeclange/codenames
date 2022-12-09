@@ -65,7 +65,7 @@ class Cluer:
 		self.clues = cl
 		# print(self.clues[('nurse','ambulance')])
 
-	def generate_clues(self, word_tup):
+	def generate_clues(self, word_tup, n=5):
 		clues = self.g.get_k_word_clue(tuple(word_tup))
 		if (len(word_tup) == 2):
 			#print(clues)
@@ -76,7 +76,7 @@ class Cluer:
 		if self.use_graph_glove:
 			clues = self.g.guesser.filter_valid_words(self.graphglove.graph_glove_clue(word_tup))
 
-		return self.g.guesser.score_clues(word_tup, clues)[0][:5]
+		return self.g.guesser.score_clues(word_tup, clues)[0][:n]
 
 		
 	def evaluate_tup(self, word_tup, board, clue, trials=500):
@@ -436,7 +436,7 @@ class Cluer2(Cluer):
 		best_clues = []
 		partition_scores = []
 		for p in tqdm.tqdm(partitions):
-			possible_clues = self.generate_clues(list(p))
+			possible_clues = self.generate_clues(list(p),n=10)
 			# print(possible_clues)
 			clue_scores = []
 			if (len(possible_clues) > 0):

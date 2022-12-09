@@ -20,6 +20,30 @@ with open("codewords_simplified.txt") as f:
 with open("cm_wordlist.txt") as f:
     clue_words = [x.strip() for x in f.readlines()]
 
+def print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, previous_guesses):
+    grid_size = 5
+
+    # Print the grid rows with row numbers
+    for i in range(grid_size):
+        # Print the words in the row, padded with spaces to align
+        for j in range(grid_size):
+            if board_words[i * grid_size + j] in previous_guesses:
+                if board_words[i * grid_size + j] in red_words:
+                    color = "\033[1;31m"
+                elif board_words[i * grid_size + j] in blue_words:
+                    color = "\033[1;34m"
+                elif board_words[i * grid_size + j] in bystanders:
+                    color = "\033[1;33m"
+                elif board_words[i * grid_size + j] in assassin:
+                    color = "\033[1;30m"
+            else:
+                color = "\033[1;37m"
+            # Print the word with the specified color
+            print("{color}{:^{w}s}\033[0m".format(board_words[i * grid_size + j], w=12, color=color), end="")
+        # Start a new line for the next row
+        print()
+
+
 if __name__ == "__main__":
 
     spymaster = Cluer2()
@@ -60,25 +84,7 @@ if __name__ == "__main__":
             while not done:
                 clue_tup = spymaster.clue()
                 target_words = spymaster.word_best_tup
-                grid_size = 5
-
-                # Print the grid rows with row numbers
-                for i in range(grid_size):
-                    # Print the words in the row, padded with spaces to align
-                    for j in range(grid_size):
-                        if board_words[i * grid_size + j] in spymaster.previous_guesses:
-                            if board_words[i * grid_size + j] in red_words:
-                                color = "\033[1;31m"
-                            elif board_words[i * grid_size + j] in blue_words:
-                                color = "\033[1;34m"
-                            elif board_words[i * grid_size + j] in bystanders:
-                                color = "\033[1;33m"
-                        else:
-                            color = "\033[1;37m"
-                        # Print the word with the specified color
-                        print("{color}{:^{w}s}\033[0m".format(board_words[i * grid_size + j], w=12, color=color), end="")
-                    # Start a new line for the next row
-                    print()
+                print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, spymaster.previous_guesses)
                 #print("Remaining words: " + str(set(board_words) - set(spymaster.previous_guesses)))
                 #print("Blue words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)) or ""))
                 #print("Red words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.red_words)) or ""))
@@ -128,23 +134,7 @@ if __name__ == "__main__":
                         print("You guessed a Bystander.")
                         turn_done = True
 
-                    # Print the grid rows with row numbers
-                    for i in range(grid_size):
-                        # Print the words in the row, padded with spaces to align
-                        for j in range(grid_size):
-                            if board_words[i * grid_size + j] in spymaster.previous_guesses:
-                                if board_words[i * grid_size + j] in red_words:
-                                    color = "\033[1;31m"
-                                elif board_words[i * grid_size + j] in blue_words:
-                                    color = "\033[1;34m"
-                                elif board_words[i * grid_size + j] in bystanders:
-                                    color = "\033[1;33m"
-                            else:
-                                color = "\033[1;37m"
-                            # Print the word with the specified color
-                            print("{color}{:^{w}s}\033[0m".format(board_words[i * grid_size + j], w=12, color=color), end="")
-                        # Start a new line for the next row
-                        print()
+                    print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, spymaster.previous_guesses)
 
                 writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
                 guessed_words = []
@@ -154,7 +144,8 @@ if __name__ == "__main__":
             print("Game finished!")
             print("Turns: " + str(turns))
             print("True board:")
-            print([assassin, red_words, blue_words, bystanders])
+            #print([assassin, red_words, blue_words, bystanders])
+            print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, board_words)
             print("Intended clues:")
             print(list(zip(spymaster.previous_clues, spymaster.previous_clues_output)))
     finally:
