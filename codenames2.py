@@ -42,7 +42,7 @@ def print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, 
             print("{color}{:^{w}s}\033[0m".format(board_words[i * grid_size + j], w=12, color=color), end="")
         # Start a new line for the next row
         print()
-
+HUMAN=True
 
 if __name__ == "__main__":
 
@@ -59,6 +59,7 @@ if __name__ == "__main__":
 
     try:
         while(True):
+            random.seed(7890)
             board_words = lower(sample(codewords, k=25))
             #board_words = ['snowman','giant','helicopter','field','scorpion','alps','ray','unicorn','maple','calf','shop','table','circle','part','bridge','turkey','bell','lawyer','play','cricket','log','australia','chair','bar','center']
             #board_words = ['school','pyramid','organ','robin','bomb','superhero','contract','thumb','dwarf','note','microscope','chest','triangle','fair','stream','bugle','stadium','arm','spike','boom','band','antarctica','palm','fall','spring']
@@ -82,16 +83,15 @@ if __name__ == "__main__":
             print("New game -- here is the board")
             print(board_words)
 
+            if False:
+                print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, board_words)
+
             done = False
             turns = 0
             while not done:
-                clue_tup = spymaster.clue()
-                target_words = spymaster.word_best_tup
+                clue_tup = spymaster.clue() if not HUMAN else ("",25)
+                target_words = spymaster.word_best_tup if not HUMAN else []
                 print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, spymaster.previous_guesses)
-                #print("Remaining words: " + str(set(board_words) - set(spymaster.previous_guesses)))
-                #print("Blue words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.blue_words)) or ""))
-                #print("Red words found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.red_words)) or ""))
-                #print("Bystanders found: " + str(set(spymaster.previous_guesses).intersection(set(spymaster.bystanders)) or ""))
 
                 print("Clue: ", clue_tup)
                 spymaster.previous_clues.append(clue_tup[0])
@@ -99,6 +99,7 @@ if __name__ == "__main__":
                 
                 # print("Targets:", target_words)
                 n_target = clue_tup[1]
+                n_target = 25
                 turn_done = False
                 guessed_words = []
                 while not turn_done:
