@@ -7,7 +7,7 @@ class GraphGlove():
         self.model = torch.load("graphglove_wiki50k_dist_20d.model.pth")
     def precompute_pairwise_dist(self, words):
         self.words = list(words)
-        ixs = [self.model.token_to_ix[w] for w in words]
+        ixs = [self.model.token_to_ix[w] for w in words if w in self.model.token_to_ix]
         self.dists = self.model.graph_embedding.compute_pairwise_distances(indices=ixs)
         
     def graph_glove_clue(self, words, n=20, verbose=False):
