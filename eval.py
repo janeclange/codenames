@@ -2,6 +2,7 @@ from codenames2 import *
 import numpy as np
 import tqdm
 
+#Guesser and Cluer interfaces
 def guesser(words, clue, n):
     pass
 #   return str
@@ -10,8 +11,12 @@ def cluer(positive, negative, neutral, assassin):
     pass
 #   return str, int
 
-def eval(cluer, guesser, expirements=25):
+def eval(cluer, guesser, expirements=25, first_turn_only = False):
     turns_per_game = 0
+    blues_guessed = 0
+    reds_guessed = 0
+    nuetrals_guessed = 0
+    assassin_guessed = 0
     games = 0
     for i in tqdm.tqdm(range(expirements)):
         board_words = lower(sample(codewords, k=25))
@@ -40,14 +45,17 @@ def eval(cluer, guesser, expirements=25):
                 board_words.remove(guess)
                 if guess in assassin:
                     turn_done = True
+                    assassin_guessed += 1
                     done = True
                     turns += 25
                 if guess in red_words:
                     turns += 1
+                    reds_guessed += 1
                     turn_done = True
                     red_words.remove(guess)
                 if guess in blue_words:
                     n_target -= 1
+                    blues_guessed += 1
                     # guesser.ally_words_remaining -= 1
                     if n_target == 0:
                         turn_done = True
@@ -57,12 +65,15 @@ def eval(cluer, guesser, expirements=25):
                         done = True
                 if guess in bystanders:
                     turn_done = True
+                    nuetrals_guessed += 1
                     bystanders.remove(guess)
             # writer.writerow(["_".join(target_words), clue_tup[0], "_".join(guessed_words)])
             turns += 1
+            if first_turn_only:
+                break
         turns_per_game += turns
         games += 1
-    return turns_per_game / games
+    return turns_per_game / games, (blues_guessed / games, reds_guessed / games, nuetrals_guessed / games, assassin_guessed / games)
 
 
 
@@ -120,15 +131,15 @@ def get_our_cluer():
 
 if __name__ == "__main__":
     our_cluer = get_our_cluer()
-    numberbatch_guesser = get_numberbatch_guesser()
-    result4 = eval(our_cluer, numberbatch_guesser)
-    print(result4)
-    result2 = eval(our_cluer, get_guesser())
+    # numberbatch_guesser = get_numberbatch_guesser()
+    # result4 = eval(our_cluer, numberbatch_guesser)
+    # print(result4)
+    result2 = eval(our_cluer, get_guesser(), first_turn_only=False)
     print(result2)
-    result3 = eval(get_adversary_cluer(), get_guesser("glove"))
+    result3 = eval(get_adversary_cluer(), get_guesser(), first_turn_only=False)
     print(result3)
-    result = eval(get_adversary_cluer(), get_guesser())
-    print(result, result2, result3)
+    # result = eval(get_adversary_cluer(), get_guesser())
+    print(result2, result3)
 
 
 
