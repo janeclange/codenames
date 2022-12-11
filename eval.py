@@ -101,13 +101,11 @@ def get_guesser(embedding="word2vec"):
 def get_numberbatch_guesser():
     import numberbatch_guesser
     cl = numberbatch_guesser.Guesser()
+    cl.load_data()
 
     def guesser(words, clue, n):
-        try:
-            guess = cl.guess(clue, list(words), n)
-        except:
-            import IPython; IPython.embed()
-        return guess
+        words, scores = cl.guess(clue, list(words), 1)
+        return words[0]
 
     return guesser
 
