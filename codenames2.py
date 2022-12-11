@@ -10,6 +10,7 @@ import random
 import time
 import csv
 import getpass
+import sys
 
 def lower(array):
     return [a.lower() for a in array]
@@ -46,6 +47,8 @@ HUMAN=True
 
 if __name__ == "__main__":
 
+    HUMAN = len(sys.argv)>1 and sys.argv[1]=="human"
+
     spymaster = Cluer2()
     # spymaster.load_clues()
 
@@ -59,7 +62,10 @@ if __name__ == "__main__":
 
     try:
         while(True):
-            random.seed(7890)
+            print("enter a seed, or 0 for a random seed")
+            seed = int(input("seed:"))
+            if seed:
+                random.seed(seed)
             board_words = lower(sample(codewords, k=25))
             #board_words = ['snowman','giant','helicopter','field','scorpion','alps','ray','unicorn','maple','calf','shop','table','circle','part','bridge','turkey','bell','lawyer','play','cricket','log','australia','chair','bar','center']
             #board_words = ['school','pyramid','organ','robin','bomb','superhero','contract','thumb','dwarf','note','microscope','chest','triangle','fair','stream','bugle','stadium','arm','spike','boom','band','antarctica','palm','fall','spring']
@@ -83,7 +89,7 @@ if __name__ == "__main__":
             print("New game -- here is the board")
             print(board_words)
 
-            if False:
+            if True and HUMAN:
                 print_board_fancy(board_words, assassin, red_words, blue_words, bystanders, board_words)
 
             done = False
