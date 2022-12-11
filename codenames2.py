@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
             print("Game finished!")
             print("Turns: " + str(turns))
-            turns_writer.writerow(turns)
+            turns_writer.writerow([turns])
             print("True board:")
             print([assassin, red_words, blue_words, bystanders])
             print("Intended clues:")
