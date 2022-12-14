@@ -4,9 +4,11 @@ import cgi
 import cgitb 
 import waitforinput
 import os
+import sys
 
 
 r, w = os.pipe()
+sys.stdout.flush()
 pid = os.fork()
 
 if pid: #parent process
