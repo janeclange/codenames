@@ -7,14 +7,16 @@ rev=made href="mailto:jlange@mit.edu">
 </HEAD>
 <BODY bgColor=#ffffff>
 <H1>Codenames</H1>
-<p>
-<!--exec cmd="python3 codenames3.py $" -->
+
+<form action="starter.py">
+	<input type="submit" value="Begin Game"/>
+</form>
+
 <form action="hello.py">
 	<label for="guess">Guess:</label><br>
 	<input type="text" name="guess">
 	<input type="submit" value="Submit"/>
 </form>
-</p>
 
 
 </BODY></HTML>
