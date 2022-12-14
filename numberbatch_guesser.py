@@ -59,6 +59,9 @@ class Guesser:
         self.embedding = vecs[valid_inds]
         """
 
+    def similarity(self, w1, w2):
+        return self.eval_inner_products(self.find_vecs([w1]), self.find_vecs([w2]))[0][0]
+
     def filter_valid_words(self, ws):
         ws = list(ws)
         inds = np.searchsorted(self.words, ws)
@@ -121,6 +124,7 @@ def create_minimal_numberbatch():
 
 
 if __name__=="__main__":
+
     pass
 
     # hf = h5py.File('mini.h5', 'r')
