@@ -8,7 +8,7 @@ rev=made href="mailto:jlange@mit.edu">
 <BODY bgColor=#ffffff>
 <H1>Codenames</H1>
 
-<form action="starter.py">
+<form action="starter2.py">
 	<input type="submit" value="Begin Game"/>
 </form>
 
@@ -18,5 +18,8 @@ rev=made href="mailto:jlange@mit.edu">
 	<input type="submit" value="Submit"/>
 </form>
 
+<form action="poll.py">
+	<input type="submit" value="Update page contents"/>
+</form>
 
 </BODY></HTML>
